@@ -31,22 +31,24 @@ module Systemd
       raise JournalError.new(rc) if rc < 0
 
       len = read_size_t(len_ptr)
-      out_ptr.read_pointer.read_string_length(len)
+      out_ptr.read_pointer.read_string_length(len).split('=', 2).last
     end
 
     def enumerate_data
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
-      results = []
+      results = {}
 
-      while true
+      while
         rc = Native::sd_journal_enumerate_data(@ptr, out_ptr, len_ptr)
         raise JournalError.new(rc) if rc < 0
         break if rc == 0
 
         len = read_size_t(len_ptr)
-        results.push(out_ptr.read_pointer.read_string_length(len))
-        yield results[-1] if block_given?
+        key, value = out_ptr.read_pointer.read_string_length(len).split('=', 2)
+        results[key] = value
+
+        yield(key, value) if block_given?
       end
 
       results
