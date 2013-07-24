@@ -1,9 +1,12 @@
 require 'systemd/journal/native'
 require 'systemd/journal/flags'
+require 'systemd/journal/compat'
 require 'systemd/journal_error'
 
 module Systemd
   class Journal
+    include Systemd::Journal::Compat
+
     # Returns a new instance of a Journal, opened with the provided options.
     # @param [Hash] opts optional initialization parameters.
     # @option opts [Integer] :flags a set of bitwise OR-ed `Journal::Flags`

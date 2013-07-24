@@ -26,6 +26,9 @@ module Systemd
       attach_function :sd_journal_flush_matches, [:pointer], :void
       attach_function :sd_journal_add_disjunction, [:pointer], :int
       attach_function :sd_journal_add_conjunction, [:pointer], :int
+
+      attach_function :sd_journal_print, [:int, :string], :int
+      attach_function :sd_journal_send, [:varargs], :int
     end
 
   end
