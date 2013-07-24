@@ -8,12 +8,14 @@ Gem::Specification.new do |gem|
   gem.version       = Systemd::Journal::VERSION
   gem.authors       = ["John Ledbetter"]
   gem.email         = ["john@throttle.io"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{systemd journal bindings for ruby}
+  gem.summary       = %q{systemd journal bindings for ruby}
   gem.homepage      = ""
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
+
+  gem.add_dependency 'ffi', '~>1.9.0'
 end
