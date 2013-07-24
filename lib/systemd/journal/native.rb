@@ -21,6 +21,11 @@ module Systemd
       attach_function :sd_journal_seek_realtime_usec, [:pointer, :uint64], :int
 
       attach_function :sd_journal_wait, [:pointer, :uint64], :int
+
+      attach_function :sd_journal_add_match, [:pointer, :string, :size_t], :int
+      attach_function :sd_journal_flush_matches, [:pointer], :void
+      attach_function :sd_journal_add_disjunction, [:pointer], :int
+      attach_function :sd_journal_add_conjunction, [:pointer], :int
     end
 
   end

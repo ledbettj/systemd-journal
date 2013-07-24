@@ -8,8 +8,8 @@ class SSHWatcher
   end
 
   def run
+    @journal.add_match('_EXE', '/usr/bin/sshd')
     # skip all existing entries
-    @journal.seek(:tail)
     while @journal.move_next ; end
 
     while true
@@ -24,8 +24,7 @@ class SSHWatcher
   LOGIN_REGEXP = /Accepted\s+(?<auth_method>[^\s]+)\s+for\s+(?<user>[^\s]+)\s+from\s+(?<address>[^\s]+)/
 
   def process_event(entry)
-    if entry['_EXE'] == '/usr/bin/sshd' &&
-        (m = entry['MESSAGE'].match(LOGIN_REGEXP))
+    if (m = entry['MESSAGE'].match(LOGIN_REGEXP))
       timestamp = DateTime.strptime(
         (entry['_SOURCE_REALTIME_TIMESTAMP'].to_i / 1_000_000).to_s,
         "%s"

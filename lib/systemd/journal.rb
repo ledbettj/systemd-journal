@@ -133,6 +133,41 @@ module Systemd
       raise JournalError.new(rc) if rc < 0
     end
 
+    # Add a filter to journal, such that only entries where the given filter
+    # matches are returned.
+    # move_next or move_previous must be invoked after adding a match before
+    # attempting to read from the journal.
+    # @param [String] field the column to filter on, e.g. _PID, _EXE.
+    # @param [String] value the match to search for, e.g. '/usr/bin/sshd'
+    def add_match(field, value)
+      match = "#{field.to_s.upcase}=#{value}"
+      rc = Native::sd_journal_add_match(@ptr, match, match.length)
+      raise JournalError.new(rc) if rc < 0
+    end
+
+    # Add an OR condition to the filter.  All previously added matches
+    # and any matches added afterwards will be OR-ed together.
+    # move_next or move_previous must be invoked after adding a match before
+    # attempting to read from the journal.
+    def add_disjunction
+      rc = Native::sd_journal_add_disjunction(@ptr)
+      raise JournalError.new(rc) if rc < 0
+    end
+
+    # Add an AND condition to the filter.  All previously added matches
+    # and any matches added afterwards will be AND-ed together.
+    # move_next or move_previous must be invoked after adding a match before
+    # attempting to read from the journal.
+    def add_conjunction
+      rc = Native::sd_journal_add_conjunction(@ptr)
+      raise JournalError.new(rc) if rc < 0
+    end
+
+    # remove all matches and conjunctions/disjunctions.
+    def clear_matches
+      Native::sd_journal_flush_matches(@ptr)
+    end
+
     private
 
     def self.finalize(ptr)
