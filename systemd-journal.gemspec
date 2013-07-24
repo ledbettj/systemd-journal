@@ -8,9 +8,9 @@ Gem::Specification.new do |gem|
   gem.version       = Systemd::Journal::VERSION
   gem.authors       = ["John Ledbetter"]
   gem.email         = ["john@throttle.io"]
-  gem.description   = %q{systemd journal bindings for ruby}
-  gem.summary       = %q{systemd journal bindings for ruby}
-  gem.homepage      = ""
+  gem.description   = %q{Provides the ability to navigate and read entries from the systemd journal in ruby.}
+  gem.summary       = %q{Ruby bindings to libsystemd-journal}
+  gem.homepage      = "https://github.com/ledbettj/systemd-journal"
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
