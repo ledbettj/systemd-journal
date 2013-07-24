@@ -1,20 +1,16 @@
 # Systemd::Journal
 
-TODO: Write a gem description
+Ruby bindings for reading from the systemd journal
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
-    gem 'systemd-journal'
+    gem 'systemd-journal', git: 'https://github.com/ledbettj/systemd-journal.git'
 
 And then execute:
 
     $ bundle
-
-Or install it yourself as:
-
-    $ gem install systemd-journal
 
 ## Usage
 
@@ -27,3 +23,4 @@ TODO: Write usage instructions here
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+6. Wipe hands on pants
