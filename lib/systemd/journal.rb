@@ -33,6 +33,24 @@ module Systemd
       end
     end
 
+    def seek(whence)
+      rc = case whence
+           when :head, :start
+             Native::sd_journal_seek_head(@ptr)
+           when :tail, :end
+             Native::sd_journal_seek_tail(@ptr)
+           when whence.is_a?(Time)
+             # TODO: is this right? who knows.
+             Native::sd_journal_seek_realtime_usec(@ptr, whence.to_i * 1_000_000)
+           else
+             raise ArgumentError.new("Unknown seek type: #{whence}")
+           end
+
+      raise JournalErrornew(rc) if rc < 0
+
+      true
+    end
+
     def read_data(field)
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)

@@ -15,6 +15,10 @@ module Systemd
       attach_function :sd_journal_restart_data, [:pointer], :void
       attach_function :sd_journal_enumerate_data, [:pointer, :pointer, :pointer], :int
 
+      attach_function :sd_journal_seek_head, [:pointer], :int
+      attach_function :sd_journal_seek_tail, [:pointer], :int
+      attach_function :sd_journal_seek_realtime_usec, [:pointer, :uint64], :int
+
     end
 
   end
