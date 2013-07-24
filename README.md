@@ -14,7 +14,15 @@ And then execute:
 
 ## Usage
 
-TODO: Write usage instructions here
+For example, printing all messages:
+
+    require 'systemd/journal'
+    
+    j = Systemd::Journal.new
+    
+    while j.next == 1
+      puts j.enumerate_data.join(' ')
+   end
 
 ## Contributing
 
