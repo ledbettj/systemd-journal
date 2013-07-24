@@ -20,6 +20,7 @@ module Systemd
       attach_function :sd_journal_seek_tail, [:pointer], :int
       attach_function :sd_journal_seek_realtime_usec, [:pointer, :uint64], :int
 
+      attach_function :sd_journal_wait, [:pointer, :uint64], :int
     end
 
   end

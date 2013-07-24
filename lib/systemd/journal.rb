@@ -125,6 +125,14 @@ module Systemd
       results
     end
 
+    # Block until the journal is changed.
+    # @param timeout_usec [Integer] the maximum number of microseconds to wait
+    #   or -1 to wait indefinitely.
+    def wait(timeout_usec = -1)
+      rc = Native::sd_journal_wait(@ptr, timeout_usec)
+      raise JournalError.new(rc) if rc < 0
+    end
+
     private
 
     def self.finalize(ptr)
