@@ -22,9 +22,9 @@ For example, printing all messages:
     
     j = Systemd::Journal.new
     j.seek(:head)
-
-    while j.next_entry
-      puts j.read_data('MESSAGE')
+    
+    while j.move_next
+      puts j.read_field('MESSAGE')
     end
     
 Or to print all data in each entry:
@@ -34,13 +34,12 @@ Or to print all data in each entry:
     j = Systemd::Journal.new
     j.seek(:head)
     
-    while j.next_entry
-      j.enumerate_data do |key, value|
+    while j.move_next
+      j.current_entry do |key, value|
         puts "#{key}: #{value}"
       end
       puts "\n"
     end
-
 
 ## Contributing
 

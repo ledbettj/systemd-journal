@@ -31,7 +31,7 @@ module Systemd
     # Move the read pointer to the next entry in the journal.
     # @return [Boolean] True if moving to the next entry was successful.  False
     #   indicates that we've reached the end of the journal.
-    def next_entry
+    def move_next
       case (rc = Native::sd_journal_next(@ptr))
       when 0 then false # EOF
       when 1 then true
@@ -42,7 +42,7 @@ module Systemd
     # Move the read pointer to the previous entry in the journal.
     # @return [Boolean] True if moving to the previous entry was successful.
     #   False indicates that we've reached the start of the journal.
-    def previous_entry
+    def move_previous
       case (rc = Native::sd_journal_previous(@ptr))
       when 0 then false # EOF
       when 1 then true
@@ -51,7 +51,8 @@ module Systemd
     end
 
     # Seek to a position in the journal.
-    # Note: after seeking, you must call `next_entry` or `previous_entry`.
+    # Note: after seeking, you must call move_next or move_previous before
+    #   you can call read_field or current_entry
     #
     # @param [Symbol, Time] whence one of :head, :tail, or a Time instance.
     #   :head (or :start) will seek to the beginning of the journal.
@@ -78,9 +79,11 @@ module Systemd
     end
 
     # Read the contents of the provided field from the current journal entry.
+    #   move_next or move_previous must be called at least once after
+    #   initialization or seeking prior to attempting to read data.
     # @param [String] field the name of the field to read -- e.g., 'MESSAGE'
     # @return [String] the value of the requested field.
-    def read_data(field)
+    def read_field(field)
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
 
@@ -95,8 +98,14 @@ module Systemd
     # Read the contents of all fields from the current journal entry.
     # If given a block, it will yield each field in the form of
     # (fieldname, value).
+    #
+    # move_next or move_previous must be called at least once after
+    # initialization or seeking prior to calling current_entry
+    #
     # @return [Hash] the contents of the current journal entry.
-    def enumerate_data
+    def current_entry
+      Native::sd_journal_restart_data(@ptr)
+
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
       results = {}
@@ -114,10 +123,6 @@ module Systemd
       end
 
       results
-    end
-
-    def restart_data
-      Native::sd_journal_restart_data(@ptr)
     end
 
     private
