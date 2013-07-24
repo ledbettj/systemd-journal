@@ -1,6 +1,21 @@
 module Systemd
+  # This execption is raised whenever a sd_journal_* call returns an error.
   class JournalError < StandardError
 
+    # Returns the (negated) error number.
+    attr_reader :code
+
+    # Instantiate a new JournalError based on the specified return code.
+    # `message` will be filled in by calling `strerror()` with the provided
+    # return code.
+    def initialize(code)
+      @code = -code
+      super(LIBC::strerror(@code))
+    end
+
+    private
+
+    # @private
     module LIBC
       extend FFI::Library
       ffi_lib FFI::Library::LIBC
@@ -8,8 +23,5 @@ module Systemd
       attach_function :strerror, [:int], :string
     end
 
-    def initialize(code)
-      super("#{-code}: #{LIBC::strerror(-code)}")
-    end
   end
 end
