@@ -1,18 +1,24 @@
 require 'systemd/journal/native'
+require 'systemd/journal/flags'
 require 'systemd/journal_error'
 
 module Systemd
   class Journal
 
-    def initialize(flags = 0)
-      # sd_journal_open() will fill in our pointer with a pointer to a handle
-      ptr = FFI::MemoryPointer.new(:pointer, 1)
-      rc  = Native::sd_journal_open(ptr, flags)
+    def initialize(opts = {})
+      flags = opts[:flags] || 0
+      path  = opts[:path]
+      ptr   = FFI::MemoryPointer.new(:pointer, 1)
+
+      rc = if path
+             Native::sd_journal_open_directory(ptr, path, flags)
+           else
+             Native::sd_journal_open(ptr, flags)
+           end
 
       raise JournalError.new(rc) if rc < 0
 
       @ptr = ptr.read_pointer
-
       # make sure we call sd_journal_close() when we fall out of scope
       ObjectSpace.define_finalizer(self, self.class.finalize(@ptr))
     end
