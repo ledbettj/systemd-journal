@@ -5,21 +5,32 @@ module Systemd
   class Journal
 
     def initialize(flags = 0)
+      # sd_journal_open() will fill in our pointer with a pointer to a handle
       ptr = FFI::MemoryPointer.new(:pointer, 1)
-      rc = Native::sd_journal_open(ptr, flags)
+      rc  = Native::sd_journal_open(ptr, flags)
 
       raise JournalError.new(rc) if rc < 0
 
       @ptr = ptr.read_pointer
+
+      # make sure we call sd_journal_close() when we fall out of scope
       ObjectSpace.define_finalizer(self, self.class.finalize(@ptr))
     end
 
-    def next
-      Native::sd_journal_next(@ptr)
+    def next_entry
+      case (rc = Native::sd_journal_next(@ptr))
+      when 0 then false # EOF
+      when 1 then true
+      when rc < 0 then raise JournalError.new(rc)
+      end
     end
 
-    def previous
-      Native::sd_journal_previous(@ptr)
+    def previous_entry
+      case (rc = Native::sd_journal_previous(@ptr))
+      when 0 then false # EOF
+      when 1 then true
+      when rc < 0 then raise JournalError.new(rc)
+      end
     end
 
     def read_data(field)
