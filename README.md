@@ -20,9 +20,23 @@ For example, printing all messages:
     
     j = Systemd::Journal.new
     
-    while j.next == 1
-      puts j.enumerate_data.join(' ')
-   end
+    while j.next_entry
+      puts j.read_data('MESSAGE')
+    end
+    
+Or to print all data in each entry:
+
+    require 'systemd/journal'
+    
+    j = Systemd::Journal.new
+    
+    while j.next_entry
+      j.enumerate_data do |key, value|
+        puts "#{key}: #{value}"
+      end
+      puts "\n"
+    end
+
 
 ## Contributing
 
