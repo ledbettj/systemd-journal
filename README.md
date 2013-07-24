@@ -1,6 +1,8 @@
 # Systemd::Journal
 
-Ruby bindings for reading from the systemd journal
+Ruby bindings for reading from the systemd journal.
+
+* [documentation](http://rubydoc.info/github/ledbettj/systemd-journal)
 
 ## Installation
 
@@ -19,7 +21,8 @@ For example, printing all messages:
     require 'systemd/journal'
     
     j = Systemd::Journal.new
-    
+    j.seek(:head)
+
     while j.next_entry
       puts j.read_data('MESSAGE')
     end
@@ -29,6 +32,7 @@ Or to print all data in each entry:
     require 'systemd/journal'
     
     j = Systemd::Journal.new
+    j.seek(:head)
     
     while j.next_entry
       j.enumerate_data do |key, value|
