@@ -189,8 +189,8 @@ module Systemd
 
     # Add a filter to journal, such that only entries where the given filter
     # matches are returned.
-    # move_next or move_previous must be invoked after adding a match before
-    # attempting to read from the journal.
+    # {#move_next} or {#move_previous} must be invoked after adding a match
+    # before attempting to read from the journal.
     # @param [String] field the column to filter on, e.g. _PID, _EXE.
     # @param [String] value the match to search for, e.g. '/usr/bin/sshd'
     # @return [nil]
@@ -202,8 +202,8 @@ module Systemd
 
     # Add an OR condition to the filter.  All previously added matches
     # and any matches added afterwards will be OR-ed together.
-    # move_next or move_previous must be invoked after adding a match before
-    # attempting to read from the journal.
+    # {#move_next} or {#move_previous} must be invoked after adding a match
+    # before attempting to read from the journal.
     # @return [nil]
     def add_disjunction
       rc = Native::sd_journal_add_disjunction(@ptr)
@@ -212,8 +212,8 @@ module Systemd
 
     # Add an AND condition to the filter.  All previously added matches
     # and any matches added afterwards will be AND-ed together.
-    # move_next or move_previous must be invoked after adding a match before
-    # attempting to read from the journal.
+    # {#move_next} or {#move_previous} must be invoked after adding a match
+    # before attempting to read from the journal.
     # @return [nil]
     def add_conjunction
       rc = Native::sd_journal_add_conjunction(@ptr)
@@ -227,7 +227,7 @@ module Systemd
     end
 
     # Get the number of bytes the Journal is currently using on disk.
-    # If {#Systemd::Journal::Flags::LOCAL_ONLY} was passed when opening the
+    # If {Systemd::Journal::Flags::LOCAL_ONLY} was passed when opening the
     # journal,  this value will only reflect the size of journal files of the
     # local host, otherwise of all hosts.
     # @return [Integer] size in bytes
