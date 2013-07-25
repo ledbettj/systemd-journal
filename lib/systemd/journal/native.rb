@@ -28,7 +28,12 @@ module Systemd
       attach_function :sd_journal_enumerate_data, [:pointer, :pointer, :pointer], :int
 
       # event notification
-      attach_function :sd_journal_wait, [:pointer, :uint64], :int
+      enum :wake_reason, [
+        :nop,
+        :append,
+        :invalidate
+      ]
+      attach_function :sd_journal_wait, [:pointer, :uint64], :wake_reason
 
       # filtering
       attach_function :sd_journal_add_match,       [:pointer, :string, :size_t], :int
