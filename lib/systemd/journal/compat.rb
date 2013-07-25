@@ -7,19 +7,30 @@ module Systemd
     # by Daniel Mack (https://github.com/zonque/systemd-journal.gem)
     module Compat
 
-      LOG_EMERG   = 0 # system is unusable
-      LOG_ALERT   = 1 # action must be taken immediately
-      LOG_CRIT    = 2 # critical conditions
-      LOG_ERR     = 3 # error conditions
-      LOG_WARNING = 4 # warning conditions
-      LOG_NOTICE  = 5 # normal but significant condition
-      LOG_INFO    = 6 # informational
-      LOG_DEBUG   = 7 # debug-level messages
+       # system is unusable
+      LOG_EMERG   = 0
+      # action must be taken immediately
+      LOG_ALERT   = 1
+      # critical conditions
+      LOG_CRIT    = 2
+      # error conditions
+      LOG_ERR     = 3
+      # warning conditions
+      LOG_WARNING = 4
+      # normal but significant condition
+      LOG_NOTICE  = 5
+      # informational
+      LOG_INFO    = 6
+      # debug-level messages
+      LOG_DEBUG   = 7
 
+      # @private
       def self.included(base)
         base.extend(ClassMethods)
       end
 
+      # methods in this module will be available as class methods on
+      #  {Systemd::Journal}
       module ClassMethods
 
         # write a simple message to the systemd journal.
