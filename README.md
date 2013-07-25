@@ -12,7 +12,7 @@ Add this line to your application's Gemfile:
 
 And then execute:
 
-    $ bundle
+    bundle install
 
 ## Usage
 

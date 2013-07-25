@@ -175,7 +175,9 @@ module Systemd
     # @example Wait for an event for a maximum of 3 seconds
     #   j = Systemd::Journal.new
     #   j.seek(:tail)
-    #   j.wait(3 * 1_000_000)
+    #   if j.wait(3 * 1_000_000) != :nop
+    #     # event occurred
+    #   end
     # @return [Symbol] :nop if the wait time was reached (no events occured).
     # @return [Symbol] :append if new entries were appened to the journal.
     # @return [Symbol] :invalidate if journal files were added/removed/rotated.
