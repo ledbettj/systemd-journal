@@ -205,6 +205,15 @@ module Systemd
     # {#move_next} or {#move_previous} must be invoked after adding a match
     # before attempting to read from the journal.
     # @return [nil]
+    # @example Filter entries returned using an OR condition
+    #   j = Systemd::Journal.new
+    #   j.add_match('PRIORITY', 5)
+    #   j.add_match('_EXE', '/usr/bin/sshd')
+    #   j.add_disjunction
+    #   while j.move_next
+    #     # current_entry is either an sshd event or
+    #     # has priority 5
+    #   end
     def add_disjunction
       rc = Native::sd_journal_add_disjunction(@ptr)
       raise JournalError.new(rc) if rc < 0
@@ -215,6 +224,14 @@ module Systemd
     # {#move_next} or {#move_previous} must be invoked after adding a match
     # before attempting to read from the journal.
     # @return [nil]
+    # @example Filter entries returned using an AND condition
+    #   j = Systemd::Journal.new
+    #   j.add_match('PRIORITY', 5)
+    #   j.add_match('_EXE', '/usr/bin/sshd')
+    #   j.add_conjunction
+    #   while j.move_next
+    #     # current_entry is an sshd event with priority 5
+    #   end
     def add_conjunction
       rc = Native::sd_journal_add_conjunction(@ptr)
       raise JournalError.new(rc) if rc < 0
