@@ -191,6 +191,18 @@ module Systemd
       Native::sd_journal_flush_matches(@ptr)
     end
 
+    # @return the amount of disk usage in bytes used for systemd journal
+    #  files.  If Systemd::Journal::Flags::LOCAL_ONLY was passed when
+    # opening the journal,  this value will only reflect the size of journal
+    #files of the local host, otherwise of all hosts.
+    def disk_usage
+      size_ptr = FFI::MemoryPointer.new(:uint64)
+      rc = Native::sd_journal_get_usage(@ptr, size_ptr)
+
+      raise JournalError.new(rc) if rc < 0
+      size_ptr.read_uint64
+    end
+
     private
 
     def self.finalize(ptr)

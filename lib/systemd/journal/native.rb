@@ -37,6 +37,9 @@ module Systemd
       # writing
       attach_function :sd_journal_print, [:int, :string], :int
       attach_function :sd_journal_send,  [:varargs], :int
+
+      # misc
+      attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
     end
 
   end
