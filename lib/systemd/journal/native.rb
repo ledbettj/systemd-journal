@@ -1,5 +1,7 @@
 module Systemd
   class Journal
+    # Provides the FFI bindings to the native `libsystemd-journal` shared
+    #   library.
     module Native
       require 'ffi'
       extend FFI::Library

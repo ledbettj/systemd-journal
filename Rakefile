@@ -7,5 +7,5 @@ end
 
 YARD::Rake::YardocTask.new do |t|
   t.files = ['lib/**/*.rb']
-  t.options = ['--no-private']
+  t.options = ['--no-private', '--markup=markdown']
 end

@@ -15,6 +15,7 @@ module Systemd
 
     private
 
+    # FFI wrapper for the C standard library to pull in `strerror`.
     # @private
     module LIBC
       extend FFI::Library
