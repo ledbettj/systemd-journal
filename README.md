@@ -8,7 +8,7 @@ Ruby bindings for reading from the systemd journal.
 
 Add this line to your application's Gemfile:
 
-    gem 'systemd-journal', git: 'https://github.com/ledbettj/systemd-journal.git'
+    gem 'systemd-journal', '~> 0.1.0'
 
 And then execute:
 
@@ -21,7 +21,6 @@ For example, printing all messages:
     require 'systemd/journal'
     
     j = Systemd::Journal.new
-    j.seek(:head)
     
     while j.move_next
       puts j.read_field('MESSAGE')
@@ -32,7 +31,6 @@ Or to print all data in each entry:
     require 'systemd/journal'
     
     j = Systemd::Journal.new
-    j.seek(:head)
     
     while j.move_next
       j.current_entry do |key, value|
