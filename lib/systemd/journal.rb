@@ -42,6 +42,16 @@ module Systemd
       end
     end
 
+    # Move the read pointer forward by `amount` entries.
+    # @return the actual number of entries which the pointer was moved by. If
+    #   this number is less than the requested, we've reached the end of the
+    #   journal.
+    def move_next_skip(amount)
+      rc = Native::sd_journal_next_skip(@ptr, amount)
+      raise JournalError.new(rc) if rc < 0
+      rc
+    end
+
     # Move the read pointer to the previous entry in the journal.
     # @return [Boolean] True if moving to the previous entry was successful.
     #   False indicates that we've reached the start of the journal.
@@ -51,6 +61,16 @@ module Systemd
       when 1 then true
       when rc < 0 then raise JournalError.new(rc)
       end
+    end
+
+    # Move the read pointer backwards by `amount` entries.
+    # @return the actual number of entries which the pointer was moved by. If
+    #   this number is less than the requested, we've reached the start of the
+    #   journal.
+    def move_previous_skip(amount)
+      rc = Native::sd_journal_previous_skip(@ptr, amount)
+      raise JournalError.new(rc) if rc < 0
+      rc
     end
 
     # Seek to a position in the journal.

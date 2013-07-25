@@ -9,8 +9,11 @@ module Systemd
       attach_function :sd_journal_open_directory, [:pointer, :string, :int], :int
       attach_function :sd_journal_close, [:pointer], :void
 
-      attach_function :sd_journal_next,     [:pointer], :int
-      attach_function :sd_journal_previous, [:pointer], :int
+      # navigation
+      attach_function :sd_journal_next,          [:pointer], :int
+      attach_function :sd_journal_next_skip,     [:pointer, :uint64], :int
+      attach_function :sd_journal_previous,      [:pointer], :int
+      attach_function :sd_journal_previous_skip, [:pointer, :uint64], :int
 
       attach_function :sd_journal_get_data, [:pointer, :string, :pointer, :pointer], :int
       attach_function :sd_journal_restart_data, [:pointer], :void
