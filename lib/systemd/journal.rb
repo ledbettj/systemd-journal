@@ -1,9 +1,12 @@
 require 'systemd/journal/native'
 require 'systemd/journal/flags'
+require 'systemd/journal/compat'
 require 'systemd/journal_error'
 
 module Systemd
   class Journal
+    include Systemd::Journal::Compat
+
     # Returns a new instance of a Journal, opened with the provided options.
     # @param [Hash] opts optional initialization parameters.
     # @option opts [Integer] :flags a set of bitwise OR-ed `Journal::Flags`
@@ -39,6 +42,16 @@ module Systemd
       end
     end
 
+    # Move the read pointer forward by `amount` entries.
+    # @return the actual number of entries which the pointer was moved by. If
+    #   this number is less than the requested, we've reached the end of the
+    #   journal.
+    def move_next_skip(amount)
+      rc = Native::sd_journal_next_skip(@ptr, amount)
+      raise JournalError.new(rc) if rc < 0
+      rc
+    end
+
     # Move the read pointer to the previous entry in the journal.
     # @return [Boolean] True if moving to the previous entry was successful.
     #   False indicates that we've reached the start of the journal.
@@ -48,6 +61,16 @@ module Systemd
       when 1 then true
       when rc < 0 then raise JournalError.new(rc)
       end
+    end
+
+    # Move the read pointer backwards by `amount` entries.
+    # @return the actual number of entries which the pointer was moved by. If
+    #   this number is less than the requested, we've reached the start of the
+    #   journal.
+    def move_previous_skip(amount)
+      rc = Native::sd_journal_previous_skip(@ptr, amount)
+      raise JournalError.new(rc) if rc < 0
+      rc
     end
 
     # Seek to a position in the journal.
@@ -166,6 +189,18 @@ module Systemd
     # remove all matches and conjunctions/disjunctions.
     def clear_matches
       Native::sd_journal_flush_matches(@ptr)
+    end
+
+    # @return the amount of disk usage in bytes used for systemd journal
+    #  files.  If Systemd::Journal::Flags::LOCAL_ONLY was passed when
+    # opening the journal,  this value will only reflect the size of journal
+    #files of the local host, otherwise of all hosts.
+    def disk_usage
+      size_ptr = FFI::MemoryPointer.new(:uint64)
+      rc = Native::sd_journal_get_usage(@ptr, size_ptr)
+
+      raise JournalError.new(rc) if rc < 0
+      size_ptr.read_uint64
     end
 
     private
