@@ -9,12 +9,13 @@ class SSHWatcher
 
   def run
     @journal.add_match('_EXE', '/usr/bin/sshd')
-    # skip all existing entries
+    # skip all existing entries -- sd_journal_seek_tail() is currently broken.
     while @journal.move_next ; end
 
     while true
-      @journal.wait(1_000_000 * 5)
-      process_event(@journal.current_entry) while @journal.move_next
+      if @journal.wait(1_000_000 * 5) != :nop
+        process_event(@journal.current_entry) while @journal.move_next
+      end
     end
     
   end
