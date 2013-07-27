@@ -1,5 +1,6 @@
 module Systemd
   class Journal
-    VERSION = '0.1.0'
+    # The version of the systemd-journal gem.
+    VERSION = '0.1.1'
   end
 end
