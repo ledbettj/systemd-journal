@@ -2,6 +2,7 @@ require "bundler/gem_tasks"
 require "yard"
 require "rspec/core/rake_task"
 
+desc "open a console with systemd/journal required"
 task :console do
   exec 'pry -I./lib -r systemd/journal'
 end

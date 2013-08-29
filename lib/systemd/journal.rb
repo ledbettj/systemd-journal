@@ -106,11 +106,13 @@ module Systemd
              Native::sd_journal_seek_head(@ptr)
            when :tail, :end
              Native::sd_journal_seek_tail(@ptr)
-           when whence.is_a?(Time)
-             # TODO: is this right? who knows.
-             Native::sd_journal_seek_realtime_usec(@ptr, whence.to_i * 1_000_000)
            else
-             raise ArgumentError.new("Unknown seek type: #{whence}")
+             if whence.is_a?(Time)
+               # TODO: is this right? who knows.
+               Native::sd_journal_seek_realtime_usec(@ptr, whence.to_i * 1_000_000)
+             else
+               raise ArgumentError.new("Unknown seek type: #{whence.class}")
+             end
            end
 
       raise JournalErrornew(rc) if rc < 0
