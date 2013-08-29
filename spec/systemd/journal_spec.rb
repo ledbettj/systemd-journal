@@ -35,50 +35,45 @@ describe Systemd::Journal do
     end
   end
 
-  describe 'move_next' do
-    it 'returns true on a successful move next' do
-      j = Systemd::Journal.new
-      Systemd::Journal::Native.should_receive(:sd_journal_next).and_return(1)
-      j.move_next.should eq(true)
+  ['next', 'previous'].each do |direction|
+    describe "move_#{direction}" do
+      it 'returns true on a successful move' do
+        j = Systemd::Journal.new
+        Systemd::Journal::Native.should_receive(:"sd_journal_#{direction}").and_return(1)
+        j.send(:"move_#{direction}").should eq(true)
+      end
+
+      it 'returns false on EOF' do
+        j = Systemd::Journal.new
+        Systemd::Journal::Native.should_receive(:"sd_journal_#{direction}").and_return(0)
+        j.send(:"move_#{direction}").should eq(false)
+      end
+
+      it 'raises an exception on failure' do
+        j = Systemd::Journal.new
+        Systemd::Journal::Native.should_receive(:"sd_journal_#{direction}").and_return(-1)
+        expect {
+          j.send(:"move_#{direction}")
+        }.to raise_error(Systemd::JournalError)
+      end
     end
 
-    it 'returns false on EOF' do
-      j = Systemd::Journal.new
-      Systemd::Journal::Native.should_receive(:sd_journal_next).and_return(0)
-      j.move_next.should eq(false)
-    end
+    describe "move_#{direction}_skip" do
+      it 'returns the number of records moved by' do
+        Systemd::Journal::Native.should_receive(:"sd_journal_#{direction}_skip").
+          with(anything, 10).and_return(10)
 
-    it 'raises an exception on failure' do
-      j = Systemd::Journal.new
-      Systemd::Journal::Native.should_receive(:sd_journal_next).and_return(-1)
-      expect {
-        j.move_next
-      }.to raise_error(Systemd::JournalError)
-    end
+        Systemd::Journal.new.send(:"move_#{direction}_skip", 10).should eq(10)
+      end
 
+      it 'raises an exception on failure' do
+        Systemd::Journal::Native.should_receive(:"sd_journal_#{direction}_skip").
+          with(anything, 10).and_return(-1)
+
+        j = Systemd::Journal.new
+
+        expect { j.send(:"move_#{direction}_skip", 10) }.to raise_error(Systemd::JournalError)
+      end
+    end
   end
-
-  describe 'move_previous' do
-    it 'returns true on a successful move prev' do
-      j = Systemd::Journal.new
-      Systemd::Journal::Native.should_receive(:sd_journal_previous).and_return(1)
-      j.move_previous.should eq(true)
-    end
-
-    it 'returns false on EOF' do
-      j = Systemd::Journal.new
-      Systemd::Journal::Native.should_receive(:sd_journal_previous).and_return(0)
-      j.move_previous.should eq(false)
-    end
-
-    it 'raises an exception on failure' do
-      j = Systemd::Journal.new
-      Systemd::Journal::Native.should_receive(:sd_journal_previous).and_return(-1)
-      expect {
-        j.move_previous
-      }.to raise_error(Systemd::JournalError)
-    end
-
-  end
-
 end
