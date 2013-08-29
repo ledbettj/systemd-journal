@@ -6,6 +6,7 @@ require 'systemd/journal/version'
 Gem::Specification.new do |gem|
   gem.name          = "systemd-journal"
   gem.version       = Systemd::Journal::VERSION
+  gem.license       = 'MIT'
   gem.authors       = ["John Ledbetter", "Daniel Mack"]
   gem.email         = ["john@throttle.io"]
   gem.description   = %q{Provides the ability to navigate and read entries from the systemd journal in ruby, as well as write events to the journal.}
