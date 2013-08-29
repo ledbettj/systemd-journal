@@ -2,7 +2,7 @@
 
 Ruby bindings for reading from the systemd journal.
 
-* [documentation](http://rubydoc.info/github/ledbettj/systemd-journal)
+* [documentation](http://rubydoc.info/github/ledbettj/systemd-journal/Systemd/Journal)
 
 ## Installation
 
