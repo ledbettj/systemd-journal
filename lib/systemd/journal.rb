@@ -2,6 +2,7 @@ require 'systemd/journal/native'
 require 'systemd/journal/flags'
 require 'systemd/journal/compat'
 require 'systemd/journal_error'
+require 'systemd/id128'
 
 module Systemd
   # Class to allow interacting with the systemd journal.
