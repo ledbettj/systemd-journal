@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 describe Systemd::Journal do
-
   
   before(:each) do
+    # don't actually make native API calls.
     dummy_open = ->(ptr, flags, path=nil) do
       dummy = FFI::MemoryPointer.new(:int, 1)
       ptr.write_pointer(dummy)
@@ -33,5 +33,28 @@ describe Systemd::Journal do
         Systemd::Journal.new
       }.to raise_error(Systemd::JournalError)
     end
+  end
+
+  describe 'move_next' do
+    it 'returns true on a successful move next' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_next).and_return(1)
+      j.move_next.should eq(true)
+    end
+
+    it 'returns false on EOF' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_next).and_return(0)
+      j.move_next.should eq(false)
+    end
+
+    it 'raises an exception on failure' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_next).and_return(-1)
+      expect {
+        j.move_next
+      }.to raise_error(Systemd::JournalError)
+    end
+
   end
 end
