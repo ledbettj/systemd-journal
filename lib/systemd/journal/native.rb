@@ -27,6 +27,11 @@ module Systemd
       attach_function :sd_journal_restart_data,   [:pointer], :void
       attach_function :sd_journal_enumerate_data, [:pointer, :pointer, :pointer], :int
 
+      # querying
+      attach_function :sd_journal_query_unique,     [:pointer, :string], :int
+      attach_function :sd_journal_enumerate_unique, [:pointer, :pointer, :pointer], :int
+      attach_function :sd_journal_restart_unique,   [:pointer], :void
+
       # event notification
       enum :wake_reason, [
         :nop,

@@ -154,17 +154,50 @@ module Systemd
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
       results = {}
 
-      while
-        rc = Native::sd_journal_enumerate_data(@ptr, out_ptr, len_ptr)
-        raise JournalError.new(rc) if rc < 0
-        break if rc == 0
-
+      while (rc = Native::sd_journal_enumerate_data(@ptr, out_ptr, len_ptr)) > 0
         len = read_size_t(len_ptr)
         key, value = out_ptr.read_pointer.read_string_length(len).split('=', 2)
         results[key] = value
 
         yield(key, value) if block_given?
       end
+
+      raise JournalError.new(rc) if rc < 0
+
+      results
+    end
+
+    # Get the list of unique values stored in the journal for the given field.
+    # If passed a block, each possible value will be yielded.
+    # @return [Array] the list of possible values.
+    # @example Fetch all possible boot ids from the journal
+    #   j = Systemd::Journal.new
+    #   j.query_unique('_BOOT_ID')
+    # @example Enumerate machine IDs with a block
+    #   j = Systemd::Journal.new
+    #   j.query_unique('_MACHINE_ID') do |machine_id|
+    #     puts "found machine id #{machine_id}"
+    #   end
+    def query_unique(field)
+      results = []
+      field   = field.to_s.upcase
+      out_ptr = FFI::MemoryPointer.new(:pointer, 1)
+      len_ptr = FFI::MemoryPointer.new(:size_t,  1)
+
+      Native::sd_journal_restart_unique(@ptr)
+
+      if (rc = Native::sd_journal_query_unique(@ptr, field)) < 0
+        raise JournalError.new(rc)
+      end
+
+      while (rc = Native::sd_journal_enumerate_unique(@ptr, out_ptr, len_ptr)) > 0
+        len = read_size_t(len_ptr)
+        results << out_ptr.read_pointer.read_string_length(len).split('=', 2).last
+
+        yield results.last if block_given?
+      end
+
+      raise JournalError.new(rc) if rc < 0
 
       results
     end
