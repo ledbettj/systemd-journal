@@ -57,4 +57,28 @@ describe Systemd::Journal do
     end
 
   end
+
+  describe 'move_previous' do
+    it 'returns true on a successful move prev' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_previous).and_return(1)
+      j.move_previous.should eq(true)
+    end
+
+    it 'returns false on EOF' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_previous).and_return(0)
+      j.move_previous.should eq(false)
+    end
+
+    it 'raises an exception on failure' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_previous).and_return(-1)
+      expect {
+        j.move_previous
+      }.to raise_error(Systemd::JournalError)
+    end
+
+  end
+
 end
