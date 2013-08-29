@@ -15,7 +15,7 @@ describe Systemd::Journal do
     Systemd::Journal::Native.stub(:sd_journal_close).and_return(0)
   end
 
-  describe 'initialize' do
+  describe '#initialize' do
     it 'opens a directory if a path is passed' do
       Systemd::Journal::Native.should_receive(:sd_journal_open_directory)
       Systemd::Journal::Native.should_not_receive(:sd_journal_open)
@@ -36,7 +36,7 @@ describe Systemd::Journal do
   end
 
   ['next', 'previous'].each do |direction|
-    describe "move_#{direction}" do
+    describe "#move_#{direction}" do
       it 'returns true on a successful move' do
         j = Systemd::Journal.new
         Systemd::Journal::Native.should_receive(:"sd_journal_#{direction}").and_return(1)
@@ -58,7 +58,7 @@ describe Systemd::Journal do
       end
     end
 
-    describe "move_#{direction}_skip" do
+    describe "#move_#{direction}_skip" do
       it 'returns the number of records moved by' do
         Systemd::Journal::Native.should_receive(:"sd_journal_#{direction}_skip").
           with(anything, 10).and_return(10)
@@ -76,4 +76,58 @@ describe Systemd::Journal do
       end
     end
   end
+
+  describe '#seek' do
+    pending
+  end
+
+  describe '#read_field' do
+    pending
+  end
+
+  describe '#current_entry' do
+    pending
+  end
+
+  describe '#query_unique' do
+    pending
+  end
+
+  describe '#wait' do
+    pending
+  end
+
+  describe '#add_match' do
+    pending
+  end
+
+  describe '#add_conjunction' do
+    pending
+  end
+
+  describe '#add_disjunction' do
+    pending
+  end
+
+  describe '#clear_matches' do
+    pending
+  end
+
+  describe '#disk_usage' do
+    it 'returns the size used on disk' do
+      Systemd::Journal::Native.should_receive(:sd_journal_get_usage) do |ptr, size_ptr|
+        size_ptr.size == 8 ? size_ptr.write_uint64(12) : size_ptr.write_uint32(12)
+        0
+      end
+      j = Systemd::Journal.new
+      j.disk_usage.should eq(12)
+    end
+
+    it 'raises an error if the call fails' do
+      Systemd::Journal::Native.should_receive(:sd_journal_get_usage).and_return(-1)
+      j = Systemd::Journal.new
+      expect { j.disk_usage }.to raise_error(Systemd::JournalError)
+    end
+  end
+
 end
