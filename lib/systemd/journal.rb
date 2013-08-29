@@ -1,6 +1,7 @@
 require 'systemd/journal/native'
 require 'systemd/journal/flags'
 require 'systemd/journal/compat'
+require 'systemd/journal/fields'
 require 'systemd/journal_error'
 
 module Systemd
