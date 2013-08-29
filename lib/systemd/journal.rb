@@ -76,7 +76,8 @@ module Systemd
       case (rc = Native::sd_journal_previous(@ptr))
       when 0 then false # EOF
       when 1 then true
-      when rc < 0 then raise JournalError.new(rc)
+      else
+        raise JournalError.new(rc) if rc < 0
       end
     end
 
