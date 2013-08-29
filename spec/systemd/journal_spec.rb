@@ -78,7 +78,23 @@ describe Systemd::Journal do
   end
 
   describe '#seek' do
-    pending
+    it 'moves to the first entry of the file' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_seek_head).and_return(0)
+      j.seek(:head).should eq(true)
+    end
+
+    it 'moves to the last entry of the file' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_seek_tail).and_return(0)
+      j.seek(:tail).should eq(true)
+    end
+
+    it 'seeks based on time when a time is provided' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_seek_realtime_usec).and_return(0)
+      j.seek(Time.now).should eq(true)
+    end
   end
 
   describe '#read_field' do
