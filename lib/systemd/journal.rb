@@ -1,6 +1,5 @@
 require 'systemd/journal/native'
 require 'systemd/journal/flags'
-require 'systemd/journal/compat'
 require 'systemd/journal/fields'
 require 'systemd/journal_error'
 require 'systemd/id128'
@@ -11,10 +10,8 @@ module Systemd
   # Class to allow interacting with the systemd journal.
   # To read from the journal, instantiate a new {Systemd::Journal}; to write to
   # the journal, use
-  # {Systemd::Journal::Compat::ClassMethods#message Journal.message} or
-  # {Systemd::Journal::Compat::ClassMethods#print Journal.print}.
+  # TODO: re-implement writing
   class Journal
-    include Systemd::Journal::Compat
 
     # Returns a new instance of a Journal, opened with the provided options.
     # @param [Hash] opts optional initialization parameters.
