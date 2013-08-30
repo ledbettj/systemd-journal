@@ -86,7 +86,7 @@ describe Systemd::Journal do
 
   describe '#read_field' do
     it 'raises an exception if the call fails' do
-      Systemd::Journal::Native.stub(:sd_journal_get_data).and_return(-1)
+      Systemd::Journal::Native.should_receive(:sd_journal_get_data).and_return(-1)
 
       j = Systemd::Journal.new
       expect{ j.read_field(:message) }.to raise_error(Systemd::JournalError)
@@ -107,31 +107,92 @@ describe Systemd::Journal do
   end
 
   describe '#current_entry' do
-    pending
+    before(:each) do
+      Systemd::Journal::Native.should_receive(:sd_journal_restart_data).and_return(nil)
+    end
+    it 'raises an exception if the call fails' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_enumerate_data).and_return(-1)
+      expect { j.current_entry }.to raise_error(Systemd::JournalError)
+    end
   end
 
   describe '#query_unique' do
-    pending
+    before(:each) do
+      Systemd::Journal::Native.should_receive(:sd_journal_restart_unique).and_return(nil)
+    end
+
+    it 'raises an exception if the call fails' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_query_unique).and_return(-1)
+      expect { j.query_unique(:_pid) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'raises an exception if the call fails (2)' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_query_unique).and_return(0)
+      Systemd::Journal::Native.should_receive(:sd_journal_enumerate_unique).and_return(-1)
+      expect { j.query_unique(:_pid) }.to raise_error(Systemd::JournalError)
+    end
+
   end
 
   describe '#wait' do
-    pending
+    it 'raises an exception if the call fails' do
+      Systemd::Journal::Native.should_receive(:sd_journal_wait).and_return(-1)
+
+      j = Systemd::Journal.new
+      expect{ j.wait(100) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'returns the reason we were woken up' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_wait).and_return(:append)
+      j.wait(100).should eq(:append)
+    end
   end
 
   describe '#add_match' do
-    pending
+    it 'raises an exception if the call fails' do
+      Systemd::Journal::Native.should_receive(:sd_journal_add_match).and_return(-1)
+
+      j = Systemd::Journal.new
+      expect{ j.add_match(:message, "test") }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'formats the arguments appropriately' do
+      Systemd::Journal::Native.should_receive(:sd_journal_add_match).
+        with(anything, "MESSAGE=test", "MESSAGE=test".length).
+        and_return(0)
+
+      Systemd::Journal.new.add_match(:message, "test")
+    end
   end
 
   describe '#add_conjunction' do
-    pending
+    it 'raises an exception if the call fails' do
+      Systemd::Journal::Native.should_receive(:sd_journal_add_conjunction).and_return(-1)
+
+      j = Systemd::Journal.new
+      expect{ j.add_conjunction }.to raise_error(Systemd::JournalError)
+    end
   end
 
   describe '#add_disjunction' do
-    pending
+    it 'raises an exception if the call fails' do
+      Systemd::Journal::Native.should_receive(:sd_journal_add_disjunction).and_return(-1)
+
+      j = Systemd::Journal.new
+      expect{ j.add_disjunction }.to raise_error(Systemd::JournalError)
+    end
   end
 
   describe '#clear_matches' do
-    pending
+    it 'flushes the matches' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_flush_matches).and_return(nil)
+      j.clear_matches
+    end
   end
 
   describe '#disk_usage' do
