@@ -49,12 +49,10 @@ module Systemd
     # @return [Boolean] False if unable to move to the next entry, indicating
     #   that the pointer has reached the end of the journal.
     def move_next
-      case (rc = Native::sd_journal_next(@ptr))
-      when 0 then false
-      when 1 then true
-      else
+      if (rc = Native::sd_journal_next(@ptr)) < 0
         raise JournalError.new(rc) if rc < 0
       end
+      rc > 0
     end
 
     # Move the read pointer forward by `amount` entries.
@@ -72,12 +70,10 @@ module Systemd
     # @return [Boolean] False if unable to move to the previous entry,
     #   indicating that the pointer has reached the beginning of the journal.
     def move_previous
-      case (rc = Native::sd_journal_previous(@ptr))
-      when 0 then false # EOF
-      when 1 then true
-      else
+      if (rc = Native::sd_journal_previous(@ptr)) < 0
         raise JournalError.new(rc) if rc < 0
       end
+      rc > 0
     end
 
     # Move the read pointer backwards by `amount` entries.
