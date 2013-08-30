@@ -5,6 +5,8 @@ require 'systemd/journal/fields'
 require 'systemd/journal_error'
 require 'systemd/id128'
 
+require 'systemd/ffi_size_t'
+
 module Systemd
   # Class to allow interacting with the systemd journal.
   # To read from the journal, instantiate a new {Systemd::Journal}; to write to
@@ -137,7 +139,7 @@ module Systemd
 
       raise JournalError.new(rc) if rc < 0
 
-      len = read_size_t(len_ptr)
+      len = len_ptr.read_size_t
       out_ptr.read_pointer.read_string_length(len).split('=', 2).last
     end
 
@@ -161,7 +163,7 @@ module Systemd
       results = {}
 
       while (rc = Native::sd_journal_enumerate_data(@ptr, out_ptr, len_ptr)) > 0
-        len = read_size_t(len_ptr)
+        len = len_ptr.read_size_t
         key, value = out_ptr.read_pointer.read_string_length(len).split('=', 2)
         results[key] = value
 
@@ -196,7 +198,7 @@ module Systemd
       end
 
       while (rc = Native::sd_journal_enumerate_unique(@ptr, out_ptr, len_ptr)) > 0
-        len = read_size_t(len_ptr)
+        len = len_ptr.read_size_t
         results << out_ptr.read_pointer.read_string_length(len).split('=', 2).last
 
         yield results.last if block_given?
@@ -298,17 +300,6 @@ module Systemd
 
     def self.finalize(ptr)
       proc{ Native::sd_journal_close(ptr) unless ptr.nil? }
-    end
-
-    def read_size_t(ptr)
-      case ptr.size
-      when 8
-        ptr.read_uint64
-      when 4
-        ptr.read_uint32
-      else
-        raise StandardError.new("Unhandled size_t size: #{ptr.size}")
-      end
     end
 
   end

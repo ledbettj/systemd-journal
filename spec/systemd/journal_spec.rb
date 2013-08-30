@@ -98,7 +98,7 @@ describe Systemd::Journal do
       Systemd::Journal::Native.should_receive(:sd_journal_get_data) do |ptr, field, out_ptr, len_ptr|
         dummy = "MESSAGE=hello world"
         out_ptr.write_pointer(FFI::MemoryPointer.from_string(dummy))
-        len_ptr.size == 8 ? len_ptr.write_uint64(dummy.size) : len_ptr.write_uint32(dummy.size)
+        len_ptr.write_size_t(dummy.size)
         0
       end
 
@@ -125,7 +125,7 @@ describe Systemd::Journal do
         if results.any?
           x = results.shift
           out_ptr.write_pointer(FFI::MemoryPointer.from_string(x))
-          len_ptr.size == 8 ? len_ptr.write_uint64(x.length) : len_ptr.write_uint32(x.length)
+          len_ptr.write_size_t(x.length)
           1
         else
           0
@@ -164,7 +164,7 @@ describe Systemd::Journal do
         if results.any?
           x = results.shift
           out_ptr.write_pointer(FFI::MemoryPointer.from_string(x))
-          len_ptr.size == 8 ? len_ptr.write_uint64(x.length) : len_ptr.write_uint32(x.length)
+          len_ptr.write_size_t(x.length)
           1
         else
           0
@@ -237,7 +237,7 @@ describe Systemd::Journal do
   describe '#disk_usage' do
     it 'returns the size used on disk' do
       Systemd::Journal::Native.should_receive(:sd_journal_get_usage) do |ptr, size_ptr|
-        size_ptr.size == 8 ? size_ptr.write_uint64(12) : size_ptr.write_uint32(12)
+        size_ptr.write_size_t(12)
         0
       end
       j = Systemd::Journal.new
