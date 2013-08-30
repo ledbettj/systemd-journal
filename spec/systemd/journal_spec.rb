@@ -110,10 +110,29 @@ describe Systemd::Journal do
     before(:each) do
       Systemd::Journal::Native.should_receive(:sd_journal_restart_data).and_return(nil)
     end
+
     it 'raises an exception if the call fails' do
       j = Systemd::Journal.new
       Systemd::Journal::Native.should_receive(:sd_journal_enumerate_data).and_return(-1)
       expect { j.current_entry }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'returns the correct data' do
+      j = Systemd::Journal.new
+      results = ['_PID=100', '_MESSAGE=hello world']
+
+      Systemd::Journal::Native.should_receive(:sd_journal_enumerate_data).exactly(3).times do |ptr, out_ptr, len_ptr|
+        if results.any?
+          x = results.shift
+          out_ptr.write_pointer(FFI::MemoryPointer.from_string(x))
+          len_ptr.size == 8 ? len_ptr.write_uint64(x.length) : len_ptr.write_uint32(x.length)
+          1
+        else
+          0
+        end
+      end
+
+      j.current_entry.should eq('_PID' => '100', '_MESSAGE' => 'hello world')
     end
   end
 
@@ -133,6 +152,26 @@ describe Systemd::Journal do
       Systemd::Journal::Native.should_receive(:sd_journal_query_unique).and_return(0)
       Systemd::Journal::Native.should_receive(:sd_journal_enumerate_unique).and_return(-1)
       expect { j.query_unique(:_pid) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'returns the correct data' do
+      j = Systemd::Journal.new
+      results = ['_PID=100', '_PID=200', '_PID=300']
+
+      Systemd::Journal::Native.should_receive(:sd_journal_query_unique).and_return(0)
+
+      Systemd::Journal::Native.should_receive(:sd_journal_enumerate_unique).exactly(4).times do |ptr, out_ptr, len_ptr|
+        if results.any?
+          x = results.shift
+          out_ptr.write_pointer(FFI::MemoryPointer.from_string(x))
+          len_ptr.size == 8 ? len_ptr.write_uint64(x.length) : len_ptr.write_uint32(x.length)
+          1
+        else
+          0
+        end
+      end
+
+      j.query_unique(:_pid).should eq(['100', '200', '300'])
     end
 
   end
