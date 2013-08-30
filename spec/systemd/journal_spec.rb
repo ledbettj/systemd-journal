@@ -85,7 +85,25 @@ describe Systemd::Journal do
   end
 
   describe '#read_field' do
-    pending
+    it 'raises an exception if the call fails' do
+      Systemd::Journal::Native.stub(:sd_journal_get_data).and_return(-1)
+
+      j = Systemd::Journal.new
+      expect{ j.read_field(:message) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'parses the returned value correctly.' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_get_data) do |ptr, field, out_ptr, len_ptr|
+        dummy = "MESSAGE=hello world"
+        out_ptr.write_pointer(FFI::MemoryPointer.from_string(dummy))
+        len_ptr.size == 8 ? len_ptr.write_uint64(dummy.size) : len_ptr.write_uint32(dummy.size)
+        0
+      end
+
+      j.read_field(:message).should eq("hello world")
+    end
   end
 
   describe '#current_entry' do
