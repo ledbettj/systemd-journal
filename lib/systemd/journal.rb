@@ -97,7 +97,9 @@ module Systemd
     # @param [Symbol, Time] whence one of :head, :tail, or a Time instance.
     #   `:head` (or `:start`) will seek to the beginning of the journal.
     #   `:tail` (or `:end`) will seek to the end of the journal. When a `Time`
-    #   is provided, seek to the journal entry logged closest to that time.
+    #   is provided, seek to the journal entry logged closest to that time. When
+    #   a String is provided, assume it is a cursor from #{cursor} and seek to
+    #   that entry.
     # @return [True]
     def seek(whence)
       rc = case whence
@@ -315,6 +317,9 @@ module Systemd
       end
     end
 
+    # returns a string representing the current read position.
+    # This string can be passed to {#seek} or {#cursor?}.
+    # @return [String] a cursor token.
     def cursor
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
       if (rc = Systemd::Journal::Native.sd_journal_get_cursor(@ptr, out_ptr)) < 0
@@ -324,6 +329,11 @@ module Systemd
       out_ptr.read_pointer.read_string
     end
 
+    # Check if the read position is currently at the entry represented by the
+    # provided cursor value.
+    # @param c [String] a cursor token returned from {#cursor}.
+    # @return [Boolean] True if the current entry is the one represented by the
+    # provided cursor, False otherwise.
     def cursor?(c)
       if (rc = Systemd::Journal::Native.sd_journal_test_cursor(@ptr, c)) < 0
         raise JournalError.new(rc)
