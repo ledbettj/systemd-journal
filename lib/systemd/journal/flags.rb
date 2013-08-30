@@ -1,8 +1,9 @@
 module Systemd
   class Journal
     # contains a set of constants which maybe bitwise OR-ed together and passed
-    # to the Journal constructor:
-    #   `Journal.new(flags: Systemd::Journal::Flags::LOCAL_ONLY)`
+    # to the Journal constructor.
+    # @example
+    #   Systemd::Journal.new(flags: Systemd::Journal::Flags::LOCAL_ONLY)
     module Flags
       # Only open journal files generated on the local machine.
       LOCAL_ONLY    = 1

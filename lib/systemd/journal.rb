@@ -98,7 +98,7 @@ module Systemd
     #   `:head` (or `:start`) will seek to the beginning of the journal.
     #   `:tail` (or `:end`) will seek to the end of the journal. When a `Time`
     #   is provided, seek to the journal entry logged closest to that time. When
-    #   a String is provided, assume it is a cursor from #{cursor} and seek to
+    #   a String is provided, assume it is a cursor from {#cursor} and seek to
     #   that entry.
     # @return [True]
     def seek(whence)
