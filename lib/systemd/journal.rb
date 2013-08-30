@@ -109,6 +109,8 @@ module Systemd
              if whence.is_a?(Time)
                # TODO: is this right? who knows.
                Native::sd_journal_seek_realtime_usec(@ptr, whence.to_i * 1_000_000)
+             elsif whence.is_a?(String)
+               Native::sd_journal_seek_cursor(@ptr, whence)
              else
                raise ArgumentError.new("Unknown seek type: #{whence.class}")
              end
@@ -311,6 +313,23 @@ module Systemd
       if (rc = Native::sd_journal_set_data_threshold(@ptr, threshold)) < 0
         raise JournalError.new(rc)
       end
+    end
+
+    def cursor
+      out_ptr = FFI::MemoryPointer.new(:pointer, 1)
+      if (rc = Systemd::Journal::Native.sd_journal_get_cursor(@ptr, out_ptr)) < 0
+        raise JournalError.new(rc)
+      end
+
+      out_ptr.read_pointer.read_string
+    end
+
+    def cursor?(c)
+      if (rc = Systemd::Journal::Native.sd_journal_test_cursor(@ptr, c)) < 0
+        raise JournalError.new(rc)
+      end
+
+      rc > 0
     end
 
     private

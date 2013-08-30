@@ -22,6 +22,10 @@ module Systemd
       attach_function :sd_journal_seek_tail,          [:pointer], :int
       attach_function :sd_journal_seek_realtime_usec, [:pointer, :uint64], :int
 
+      attach_function :sd_journal_get_cursor,  [:pointer, :pointer], :int
+      attach_function :sd_journal_seek_cursor, [:pointer, :string],  :int
+      attach_function :sd_journal_test_cursor, [:pointer, :string],  :int
+
       # data reading
       attach_function :sd_journal_get_data,       [:pointer, :string, :pointer, :pointer], :int
       attach_function :sd_journal_restart_data,   [:pointer], :void

@@ -82,6 +82,20 @@ describe Systemd::Journal do
       Systemd::Journal::Native.should_receive(:sd_journal_seek_realtime_usec).and_return(0)
       j.seek(Time.now).should eq(true)
     end
+
+    it 'seeks based on a cursor when a string is provided' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_seek_cursor).
+        with(anything, "123").and_return(0)
+
+      j.seek("123")
+    end
+
+    it 'throws an exception if it doesnt understand the type' do
+      j = Systemd::Journal.new
+      expect { j.seek(Object.new) }.to raise_error(ArgumentError)
+    end
   end
 
   describe '#read_field' do
@@ -271,6 +285,35 @@ describe Systemd::Journal do
         0
       end
       j.data_threshold.should eq(0x1234)
+    end
+  end
+
+  describe '#cursor?' do
+    it 'returns true if the current cursor is the provided value' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_test_cursor).
+        with(anything, "1234").and_return(1)
+
+      j.cursor?("1234").should eq(true)
+    end
+
+    it 'returns false otherwise' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_test_cursor).
+        with(anything, "1234").and_return(0)
+
+      j.cursor?("1234").should eq(false)
+    end
+  end
+
+  describe '#cursor' do
+    it 'returns the current cursor' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_get_cursor) do |ptr, out_ptr|
+        out_ptr.write_pointer(FFI::MemoryPointer.from_string("5678"))
+        0
+      end
+      j.cursor.should eq("5678")
     end
   end
 
