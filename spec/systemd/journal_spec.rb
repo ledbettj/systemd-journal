@@ -251,4 +251,27 @@ describe Systemd::Journal do
     end
   end
 
+  describe '#data_threshold=' do
+    it 'sets the data threshold' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_set_data_threshold).
+        with(anything, 0x1234).and_return(0)
+
+      j.data_threshold = 0x1234
+    end
+  end
+
+  describe '#data_threshold' do
+    it 'gets the data threshold' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_get_data_threshold) do |ptr, size_ptr|
+        size_ptr.write_size_t(0x1234)
+        0
+      end
+      j.data_threshold.should eq(0x1234)
+    end
+  end
+
 end

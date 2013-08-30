@@ -27,6 +27,9 @@ module Systemd
       attach_function :sd_journal_restart_data,   [:pointer], :void
       attach_function :sd_journal_enumerate_data, [:pointer, :pointer, :pointer], :int
 
+      attach_function :sd_journal_get_data_threshold, [:pointer, :pointer], :int
+      attach_function :sd_journal_set_data_threshold, [:pointer, :size_t],  :int
+
       # querying
       attach_function :sd_journal_query_unique,     [:pointer, :string], :int
       attach_function :sd_journal_enumerate_unique, [:pointer, :pointer, :pointer], :int

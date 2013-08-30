@@ -293,6 +293,26 @@ module Systemd
       size_ptr.read_uint64
     end
 
+    # Get the maximum length of a data field that will be returned.
+    # Fields longer than this will be truncated.  Default is 64K.
+    # @return [Integer] size in bytes.
+    def data_threshold
+      size_ptr = FFI::MemoryPointer.new(:size_t, 1)
+      if (rc = Native::sd_journal_get_data_threshold(@ptr, size_ptr)) < 0
+        raise JournalError.new(rc)
+      end
+
+      size_ptr.read_size_t
+    end
+
+    # Set the maximum length of a data field that will be returned.
+    # Fields longer than this will be truncated.
+    def data_threshold=(threshold)
+      if (rc = Native::sd_journal_set_data_threshold(@ptr, threshold)) < 0
+        raise JournalError.new(rc)
+      end
+    end
+
     private
 
     def self.finalize(ptr)
