@@ -133,7 +133,7 @@ module Systemd
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
 
-      rc = Native::sd_journal_get_data(@ptr, field, out_ptr, len_ptr)
+      rc = Native::sd_journal_get_data(@ptr, field.to_s.upcase, out_ptr, len_ptr)
 
       raise JournalError.new(rc) if rc < 0
 
@@ -186,13 +186,12 @@ module Systemd
     #   end
     def query_unique(field)
       results = []
-      field   = field.to_s.upcase
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
       len_ptr = FFI::MemoryPointer.new(:size_t,  1)
 
       Native::sd_journal_restart_unique(@ptr)
 
-      if (rc = Native::sd_journal_query_unique(@ptr, field)) < 0
+      if (rc = Native::sd_journal_query_unique(@ptr, field.to_s.upcase)) < 0
         raise JournalError.new(rc)
       end
 
