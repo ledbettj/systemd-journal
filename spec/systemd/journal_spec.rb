@@ -1,18 +1,6 @@
 require 'spec_helper'
 
 describe Systemd::Journal do
-  
-  before(:each) do
-    # don't actually make native API calls.
-    dummy_open = ->(ptr, flags, path=nil) do
-      ptr.write_pointer(nil)
-      0
-    end
-
-    Systemd::Journal::Native.stub(:sd_journal_open, &dummy_open)
-    Systemd::Journal::Native.stub(:sd_journal_open_directory, &dummy_open)
-    Systemd::Journal::Native.stub(:sd_journal_close).and_return(0)
-  end
 
   describe '#initialize' do
     it 'opens a directory if a path is passed' do
