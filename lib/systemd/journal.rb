@@ -216,16 +216,16 @@ module Systemd
     # @example Wait for an event for a maximum of 3 seconds
     #   j = Systemd::Journal.new
     #   j.seek(:tail)
-    #   if j.wait(3 * 1_000_000) != :nop
+    #   if j.wait(3 * 1_000_000)
     #     # event occurred
     #   end
-    # @return [Symbol] :nop if the wait time was reached (no events occured).
+    # @return [Nil] if the wait time was reached (no events occured).
     # @return [Symbol] :append if new entries were appened to the journal.
     # @return [Symbol] :invalidate if journal files were added/removed/rotated.
     def wait(timeout_usec = -1)
       rc = Native::sd_journal_wait(@ptr, timeout_usec)
       raise JournalError.new(rc) if rc.is_a?(Fixnum) && rc < 0
-      rc
+      rc == :nop ? nil : rc
     end
 
     # Add a filter to journal, such that only entries where the given filter

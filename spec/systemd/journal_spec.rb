@@ -203,6 +203,12 @@ describe Systemd::Journal do
       Systemd::Journal::Native.should_receive(:sd_journal_wait).and_return(:append)
       j.wait(100).should eq(:append)
     end
+
+    it 'returns nil if we reached the timeout.' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_wait).and_return(:nop)
+      j.wait(100).should eq(nil)
+    end
   end
 
   describe '#add_match' do
