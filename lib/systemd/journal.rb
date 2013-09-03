@@ -318,7 +318,7 @@ module Systemd
     # @return [String] a cursor token.
     def cursor
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
-      if (rc = Systemd::Journal::Native.sd_journal_get_cursor(@ptr, out_ptr)) < 0
+      if (rc = Native.sd_journal_get_cursor(@ptr, out_ptr)) < 0
         raise JournalError.new(rc)
       end
 
@@ -331,7 +331,7 @@ module Systemd
     # @return [Boolean] True if the current entry is the one represented by the
     # provided cursor, False otherwise.
     def cursor?(c)
-      if (rc = Systemd::Journal::Native.sd_journal_test_cursor(@ptr, c)) < 0
+      if (rc = Native.sd_journal_test_cursor(@ptr, c)) < 0
         raise JournalError.new(rc)
       end
 
