@@ -5,8 +5,7 @@ describe Systemd::Journal do
   before(:each) do
     # don't actually make native API calls.
     dummy_open = ->(ptr, flags, path=nil) do
-      dummy = FFI::MemoryPointer.new(:int, 1)
-      ptr.write_pointer(dummy)
+      ptr.write_pointer(nil)
       0
     end
 
