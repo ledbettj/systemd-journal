@@ -298,7 +298,7 @@ module Systemd
     private
 
     def self.finalize(ptr)
-      proc{ Native::sd_journal_close(@ptr) unless @ptr.nil? }
+      proc{ Native::sd_journal_close(ptr) unless ptr.nil? }
     end
 
     def read_size_t(ptr)
