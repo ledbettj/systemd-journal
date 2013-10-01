@@ -1,3 +1,5 @@
+require 'ffi'
+
 module Systemd
   # This execption is raised whenever a sd_journal_* call returns an error.
   class JournalError < StandardError
