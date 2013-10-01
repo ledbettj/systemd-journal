@@ -61,5 +61,5 @@ module Systemd
       attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
     end
 
-  end
+  end unless $NO_FFI_SPEC
 end
