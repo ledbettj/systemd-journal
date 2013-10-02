@@ -1,4 +1,4 @@
-# Systemd::Journal
+# Systemd::Journal [![Build Status](https://travis-ci.org/ledbettj/systemd-journal.png?branch=develop)](https://travis-ci.org/ledbettj/systemd-journal)
 
 Ruby bindings for reading from the systemd journal.
 
