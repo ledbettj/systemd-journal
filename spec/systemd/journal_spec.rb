@@ -64,6 +64,33 @@ describe Systemd::Journal do
     end
   end
 
+  describe '#each' do
+    it 'should reposition to the head of the journal' do
+      j = Systemd::Journal.new
+      j.should_receive(:seek).with(:head).and_return(0)
+      j.stub(:move_next).and_return(nil)
+      j.each{|e| nil }
+    end
+
+    it 'should return an enumerator if no block is given' do
+      j = Systemd::Journal.new
+      j.each.class.should eq(Enumerator)
+    end
+
+    it 'should return each entry in the journal' do
+      entries = [{'_PID' => 1}, {'_PID' => 2}]
+      entry   = nil
+
+      j = Systemd::Journal.new
+      j.stub(:seek).and_return(0)
+      j.stub(:current_entry) { entry }
+      j.stub(:move_next)     { entry = entries.shift }
+
+      j.map{|e| e['_PID'] }.should eq([1, 2])
+    end
+
+  end
+
   describe '#seek' do
     it 'moves to the first entry of the file' do
       j = Systemd::Journal.new

@@ -12,6 +12,7 @@ module Systemd
   # the journal, use
   # TODO: re-implement writing
   class Journal
+    include Enumerable
 
     # Returns a new instance of a Journal, opened with the provided options.
     # @param [Hash] opts optional initialization parameters.
@@ -42,6 +43,17 @@ module Systemd
 
       @ptr = ptr.read_pointer
       ObjectSpace.define_finalizer(self, self.class.finalize(@ptr))
+    end
+
+    # Iterate over each entry in the journal, respecting the applied
+    # conjunctions/disjunctions.
+    # If a block is given, it is called with each entry until no more
+    # entries remain.  Otherwise, returns an enumerator which can be chained.
+    def each
+      return to_enum(:each) unless block_given?
+
+      seek(:head)
+      yield current_entry while move_next
     end
 
     # Move the read pointer to the next entry in the journal.
