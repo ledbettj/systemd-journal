@@ -33,6 +33,14 @@ module Systemd
       #  {Systemd::Journal}
       module ClassMethods
 
+        # write the value of the c errno constant to the systemd journal in the
+        # style of the perror() function.
+        # @param [String] message the text to prefix the error message with.
+        def perror(message)
+          rc = Native::sd_journal_perror(message)
+          raise JournalError.new(rc) if rc < 0
+        end
+
         # write a simple message to the systemd journal.
         # @param [Integer] level one of the LOG_* constants defining the
         #   severity of the event.

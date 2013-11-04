@@ -54,9 +54,9 @@ module Systemd
       attach_function :sd_journal_add_conjunction, [:pointer], :int
 
       # writing
-      attach_function :sd_journal_print, [:int, :string], :int
-      attach_function :sd_journal_send,  [:varargs], :int
-
+      attach_function :sd_journal_print,  [:int, :string], :int
+      attach_function :sd_journal_send,   [:varargs], :int
+      attach_function :sd_journal_perror, [:string], :int
       # misc
       attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
     end
