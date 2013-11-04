@@ -240,6 +240,24 @@ module Systemd
       rc == :nop ? nil : rc
     end
 
+    # Blocks and waits for new entries to be appended to the journal. When new
+    # entries are written, yields them in turn.  Note that this function does
+    # not automatically seek to the end of the journal prior to waiting.
+    # This method Does not return.
+    # #example Print out events as they happen
+    #   j = Systemd::Journal.new
+    #   j.seek(:tail)
+    #   j.watch do |event|
+    #     puts event.message
+    #   end
+    def watch
+      while true
+        if wait
+          yield current_entry while move_next
+        end
+      end
+    end
+
     # Add a filter to journal, such that only entries where the given filter
     # matches are returned.
     # {#move_next} or {#move_previous} must be invoked after adding a match
