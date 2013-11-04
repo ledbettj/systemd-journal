@@ -160,7 +160,7 @@ describe Systemd::Journal do
 
     it 'returns the correct data' do
       j = Systemd::Journal.new
-      results = ['_PID=100', '_MESSAGE=hello world']
+      results = ['_PID=100', 'MESSAGE=hello world']
 
       Systemd::Journal::Native.should_receive(:sd_journal_enumerate_data).exactly(3).times do |ptr, out_ptr, len_ptr|
         if results.any?
@@ -173,7 +173,11 @@ describe Systemd::Journal do
         end
       end
 
-      j.current_entry.should eq('_PID' => '100', '_MESSAGE' => 'hello world')
+      entry = j.current_entry
+
+      entry._pid.should     eq('100')
+      entry.message.should eq('hello world')
+
     end
   end
 
