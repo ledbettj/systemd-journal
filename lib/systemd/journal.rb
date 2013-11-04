@@ -60,6 +60,15 @@ module Systemd
       yield current_entry while move_next
     end
 
+    # Move the read pointer by `offset` entries.
+    # @param [Integer] offset how many entries to move the read pointer by. If
+    #   this value is positive, the read pointer moves forward.  Otherwise, it
+    #   moves backwards.
+    # @return [Integer] the number of entries the read pointer actually moved.
+    def move(offset)
+      offset > 0 ? move_next_skip(offset) : move_previous_skip(-offset)
+    end
+
     # Move the read pointer to the next entry in the journal.
     # @return [Boolean] True if moving to the next entry was successful.
     # @return [Boolean] False if unable to move to the next entry, indicating
