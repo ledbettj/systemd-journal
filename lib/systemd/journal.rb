@@ -2,6 +2,7 @@ require 'systemd/journal/native'
 require 'systemd/journal/flags'
 require 'systemd/journal/fields'
 require 'systemd/journal_error'
+require 'systemd/journal_entry'
 require 'systemd/id128'
 
 require 'systemd/ffi_size_t'
@@ -181,7 +182,7 @@ module Systemd
 
       raise JournalError.new(rc) if rc < 0
 
-      results
+      JournalEntry.new(results)
     end
 
     # Get the list of unique values stored in the journal for the given field.
