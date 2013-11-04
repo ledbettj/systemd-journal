@@ -8,7 +8,7 @@ Ruby bindings for reading from the systemd journal.
 
 Add this line to your application's Gemfile:
 
-    gem 'systemd-journal', '~> 0.1.0'
+    gem 'systemd-journal', '~> 1.0.0'
 
 And then execute:
 
@@ -16,28 +16,32 @@ And then execute:
 
 ## Usage
 
-For example, printing all messages:
+Print all messages as they occur:
 
     require 'systemd/journal'
     
     j = Systemd::Journal.new
-    
-    while j.move_next
-      puts j.read_field('MESSAGE')
+    j.seek(:tail)
+
+    j.watch do |entry|
+      puts entry.message
     end
-    
-Or to print all data in each entry:
+
+Filter messages included in the journal:
 
     require 'systemd/journal'
-    
+
     j = Systemd::Journal.new
-    
+
+    # only display entries from SSHD with priority 6.
+    j.add_match(:priority, 6)
+    j.add_match(:_exe, '/usr/bin/sshd')
+
     while j.move_next
-      j.current_entry do |key, value|
-        puts "#{key}: #{value}"
-      end
-      puts "\n"
+      puts j.current_entry
     end
+
+See the documentation for more examples.
 
 ## Contributing
 
