@@ -8,7 +8,7 @@ module Systemd
       @entry  = entry
       @fields = entry.map do |key, value|
         name = key.downcase.to_sym
-        self.class.send(:define_method, name){ value } unless respond_to?(name)
+        define_singleton_method(name){ value } unless respond_to?(name)
         name
       end
 
