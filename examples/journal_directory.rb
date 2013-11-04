@@ -8,9 +8,7 @@ if ARGV.length == 0
 end
 
 j = Systemd::Journal.new(path: ARGV[0])
-j.seek(:head)
 
-while j.move_next
-  entry = j.current_entry
-  puts "PID #{entry['_PID']}: #{entry['MESSAGE']}"
+j.each do |entry|
+  puts entry
 end

@@ -8,16 +8,11 @@ class SSHWatcher
   end
 
   def run
-    @journal.add_match('_EXE', '/usr/bin/sshd')
+    @journal.add_match(:_exe, '/usr/bin/sshd')
     # skip all existing entries -- sd_journal_seek_tail() is currently broken.
     while @journal.move_next ; end
 
-    while true
-      if @journal.wait(1_000_000 * 5) != :nop
-        process_event(@journal.current_entry) while @journal.move_next
-      end
-    end
-    
+    @journal.watch{ |entry| process_event(entry) }
   end
 
   private
@@ -25,9 +20,9 @@ class SSHWatcher
   LOGIN_REGEXP = /Accepted\s+(?<auth_method>[^\s]+)\s+for\s+(?<user>[^\s]+)\s+from\s+(?<address>[^\s]+)/
 
   def process_event(entry)
-    if (m = entry['MESSAGE'].match(LOGIN_REGEXP))
+    if (m = entry.message.match(LOGIN_REGEXP))
       timestamp = DateTime.strptime(
-        (entry['_SOURCE_REALTIME_TIMESTAMP'].to_i / 1_000_000).to_s,
+        (entry._source_realtime_timestamp.to_i / 1_000_000).to_s,
         "%s"
       )
       puts "login via #{m[:auth_method]} for #{m[:user]} from #{m[:address]} at #{timestamp.ctime}"
