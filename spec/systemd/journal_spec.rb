@@ -242,12 +242,12 @@ describe Systemd::Journal do
     end
   end
 
-  describe '#add_match' do
+  describe '#add_filter' do
     it 'raises an exception if the call fails' do
       Systemd::Journal::Native.should_receive(:sd_journal_add_match).and_return(-1)
 
       j = Systemd::Journal.new
-      expect{ j.add_match(:message, "test") }.to raise_error(Systemd::JournalError)
+      expect{ j.add_filter(:message, "test") }.to raise_error(Systemd::JournalError)
     end
 
     it 'formats the arguments appropriately' do
@@ -255,7 +255,47 @@ describe Systemd::Journal do
         with(anything, "MESSAGE=test", "MESSAGE=test".length).
         and_return(0)
 
-      Systemd::Journal.new.add_match(:message, "test")
+      Systemd::Journal.new.add_filter(:message, "test")
+    end
+  end
+
+  describe '#add_filters' do
+    it 'calls add_filter for each parameter' do
+      j = Systemd::Journal.new
+      j.should_receive(:add_filter).with(:priority, 1)
+      j.should_receive(:add_filter).with(:_exe, '/usr/bin/sshd')
+
+      j.add_filters(priority: 1, _exe: '/usr/bin/sshd')
+    end
+
+    it 'expands array arguments to multiple add_filter calls' do
+      j = Systemd::Journal.new
+      j.should_receive(:add_filter).with(:priority, 1)
+      j.should_receive(:add_filter).with(:priority, 2)
+      j.should_receive(:add_filter).with(:priority, 3)
+
+      j.add_filters(priority: [1,2,3])
+    end
+  end
+
+  describe '#filter' do
+    it 'clears the existing filters' do
+      j = Systemd::Journal.new
+      j.should_receive(:clear_filters)
+
+      j.filter({})
+    end
+
+    it 'adds disjunctions between terms' do
+      j = Systemd::Journal.new
+      j.stub(:clear_filters).and_return(nil)
+
+      j.should_receive(:add_filter).with(:priority, 1).ordered
+      j.should_receive(:add_disjunction).ordered
+      j.should_receive(:add_filter).with(:message, 'hello').ordered
+
+      j.filter({priority: 1}, {message: 'hello'})
+
     end
   end
 
@@ -277,11 +317,11 @@ describe Systemd::Journal do
     end
   end
 
-  describe '#clear_matches' do
+  describe '#clear_filters' do
     it 'flushes the matches' do
       j = Systemd::Journal.new
       Systemd::Journal::Native.should_receive(:sd_journal_flush_matches).and_return(nil)
-      j.clear_matches
+      j.clear_filters
     end
   end
 
