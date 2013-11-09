@@ -22,6 +22,20 @@ describe Systemd::Journal do
     end
   end
 
+  describe '#move' do
+    it 'calls move_next_skip if the value is positive' do
+      j = Systemd::Journal.new
+      j.should_receive(:move_next_skip).with(5)
+      j.move(5)
+    end
+
+    it 'calls move_next_previous otherwise' do
+      j = Systemd::Journal.new
+      j.should_receive(:move_previous_skip).with(5)
+      j.move(-5)
+    end
+  end
+
   ['next', 'previous'].each do |direction|
     describe "#move_#{direction}" do
       it 'returns true on a successful move' do
