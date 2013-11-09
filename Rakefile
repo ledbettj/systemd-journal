@@ -13,5 +13,9 @@ YARD::Rake::YardocTask.new do |t|
 end
 
 RSpec::Core::RakeTask.new(:spec) do |t|
-  t.rspec_opts = "--color"
+  opts = ['--color']
+  opts << '--require ./spec/no_ffi.rb' if ENV['TRAVIS']
+  t.rspec_opts = opts.join(' ')
 end
+
+task default: :spec

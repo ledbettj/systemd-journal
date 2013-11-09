@@ -1,18 +1,6 @@
 require 'spec_helper'
 
 describe Systemd::Journal do
-  
-  before(:each) do
-    # don't actually make native API calls.
-    dummy_open = ->(ptr, flags, path=nil) do
-      ptr.write_pointer(nil)
-      0
-    end
-
-    Systemd::Journal::Native.stub(:sd_journal_open, &dummy_open)
-    Systemd::Journal::Native.stub(:sd_journal_open_directory, &dummy_open)
-    Systemd::Journal::Native.stub(:sd_journal_close).and_return(0)
-  end
 
   describe '#initialize' do
     it 'opens a directory if a path is passed' do
@@ -31,6 +19,20 @@ describe Systemd::Journal do
       expect {
         Systemd::Journal.new
       }.to raise_error(Systemd::JournalError)
+    end
+  end
+
+  describe '#move' do
+    it 'calls move_next_skip if the value is positive' do
+      j = Systemd::Journal.new
+      j.should_receive(:move_next_skip).with(5)
+      j.move(5)
+    end
+
+    it 'calls move_next_previous otherwise' do
+      j = Systemd::Journal.new
+      j.should_receive(:move_previous_skip).with(5)
+      j.move(-5)
     end
   end
 
@@ -76,6 +78,33 @@ describe Systemd::Journal do
     end
   end
 
+  describe '#each' do
+    it 'should reposition to the head of the journal' do
+      j = Systemd::Journal.new
+      j.should_receive(:seek).with(:head).and_return(0)
+      j.stub(:move_next).and_return(nil)
+      j.each{|e| nil }
+    end
+
+    it 'should return an enumerator if no block is given' do
+      j = Systemd::Journal.new
+      j.each.class.should eq(Enumerator)
+    end
+
+    it 'should return each entry in the journal' do
+      entries = [{'_PID' => 1}, {'_PID' => 2}]
+      entry   = nil
+
+      j = Systemd::Journal.new
+      j.stub(:seek).and_return(0)
+      j.stub(:current_entry) { entry }
+      j.stub(:move_next)     { entry = entries.shift }
+
+      j.map{|e| e['_PID'] }.should eq([1, 2])
+    end
+
+  end
+
   describe '#seek' do
     it 'moves to the first entry of the file' do
       j = Systemd::Journal.new
@@ -94,44 +123,226 @@ describe Systemd::Journal do
       Systemd::Journal::Native.should_receive(:sd_journal_seek_realtime_usec).and_return(0)
       j.seek(Time.now).should eq(true)
     end
+
+    it 'seeks based on a cursor when a string is provided' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_seek_cursor).
+        with(anything, "123").and_return(0)
+
+      j.seek("123")
+    end
+
+    it 'throws an exception if it doesnt understand the type' do
+      j = Systemd::Journal.new
+      expect { j.seek(Object.new) }.to raise_error(ArgumentError)
+    end
   end
 
   describe '#read_field' do
-    pending
+    it 'raises an exception if the call fails' do
+      Systemd::Journal::Native.should_receive(:sd_journal_get_data).and_return(-1)
+
+      j = Systemd::Journal.new
+      expect{ j.read_field(:message) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'parses the returned value correctly.' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_get_data) do |ptr, field, out_ptr, len_ptr|
+        dummy = "MESSAGE=hello world"
+        out_ptr.write_pointer(FFI::MemoryPointer.from_string(dummy))
+        len_ptr.write_size_t(dummy.size)
+        0
+      end
+
+      j.read_field(:message).should eq("hello world")
+    end
   end
 
   describe '#current_entry' do
-    pending
+    before(:each) do
+      Systemd::Journal::Native.should_receive(:sd_journal_restart_data).and_return(nil)
+    end
+
+    it 'raises an exception if the call fails' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_enumerate_data).and_return(-1)
+      expect { j.current_entry }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'returns the correct data' do
+      j = Systemd::Journal.new
+      results = ['_PID=100', 'MESSAGE=hello world']
+
+      Systemd::Journal::Native.should_receive(:sd_journal_enumerate_data).exactly(3).times do |ptr, out_ptr, len_ptr|
+        if results.any?
+          x = results.shift
+          out_ptr.write_pointer(FFI::MemoryPointer.from_string(x))
+          len_ptr.write_size_t(x.length)
+          1
+        else
+          0
+        end
+      end
+
+      entry = j.current_entry
+
+      entry._pid.should     eq('100')
+      entry.message.should eq('hello world')
+
+    end
   end
 
   describe '#query_unique' do
-    pending
+    before(:each) do
+      Systemd::Journal::Native.should_receive(:sd_journal_restart_unique).and_return(nil)
+    end
+
+    it 'raises an exception if the call fails' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_query_unique).and_return(-1)
+      expect { j.query_unique(:_pid) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'raises an exception if the call fails (2)' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_query_unique).and_return(0)
+      Systemd::Journal::Native.should_receive(:sd_journal_enumerate_unique).and_return(-1)
+      expect { j.query_unique(:_pid) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'returns the correct data' do
+      j = Systemd::Journal.new
+      results = ['_PID=100', '_PID=200', '_PID=300']
+
+      Systemd::Journal::Native.should_receive(:sd_journal_query_unique).and_return(0)
+
+      Systemd::Journal::Native.should_receive(:sd_journal_enumerate_unique).exactly(4).times do |ptr, out_ptr, len_ptr|
+        if results.any?
+          x = results.shift
+          out_ptr.write_pointer(FFI::MemoryPointer.from_string(x))
+          len_ptr.write_size_t(x.length)
+          1
+        else
+          0
+        end
+      end
+
+      j.query_unique(:_pid).should eq(['100', '200', '300'])
+    end
+
   end
 
   describe '#wait' do
-    pending
+    it 'raises an exception if the call fails' do
+      Systemd::Journal::Native.should_receive(:sd_journal_wait).and_return(-1)
+
+      j = Systemd::Journal.new
+      expect{ j.wait(100) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'returns the reason we were woken up' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_wait).and_return(:append)
+      j.wait(100).should eq(:append)
+    end
+
+    it 'returns nil if we reached the timeout.' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_wait).and_return(:nop)
+      j.wait(100).should eq(nil)
+    end
   end
 
-  describe '#add_match' do
-    pending
+  describe '#add_filter' do
+    it 'raises an exception if the call fails' do
+      Systemd::Journal::Native.should_receive(:sd_journal_add_match).and_return(-1)
+
+      j = Systemd::Journal.new
+      expect{ j.add_filter(:message, "test") }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'formats the arguments appropriately' do
+      Systemd::Journal::Native.should_receive(:sd_journal_add_match).
+        with(anything, "MESSAGE=test", "MESSAGE=test".length).
+        and_return(0)
+
+      Systemd::Journal.new.add_filter(:message, "test")
+    end
+  end
+
+  describe '#add_filters' do
+    it 'calls add_filter for each parameter' do
+      j = Systemd::Journal.new
+      j.should_receive(:add_filter).with(:priority, 1)
+      j.should_receive(:add_filter).with(:_exe, '/usr/bin/sshd')
+
+      j.add_filters(priority: 1, _exe: '/usr/bin/sshd')
+    end
+
+    it 'expands array arguments to multiple add_filter calls' do
+      j = Systemd::Journal.new
+      j.should_receive(:add_filter).with(:priority, 1)
+      j.should_receive(:add_filter).with(:priority, 2)
+      j.should_receive(:add_filter).with(:priority, 3)
+
+      j.add_filters(priority: [1,2,3])
+    end
+  end
+
+  describe '#filter' do
+    it 'clears the existing filters' do
+      j = Systemd::Journal.new
+      j.should_receive(:clear_filters)
+
+      j.filter({})
+    end
+
+    it 'adds disjunctions between terms' do
+      j = Systemd::Journal.new
+      j.stub(:clear_filters).and_return(nil)
+
+      j.should_receive(:add_filter).with(:priority, 1).ordered
+      j.should_receive(:add_disjunction).ordered
+      j.should_receive(:add_filter).with(:message, 'hello').ordered
+
+      j.filter({priority: 1}, {message: 'hello'})
+
+    end
   end
 
   describe '#add_conjunction' do
-    pending
+    it 'raises an exception if the call fails' do
+      Systemd::Journal::Native.should_receive(:sd_journal_add_conjunction).and_return(-1)
+
+      j = Systemd::Journal.new
+      expect{ j.add_conjunction }.to raise_error(Systemd::JournalError)
+    end
   end
 
   describe '#add_disjunction' do
-    pending
+    it 'raises an exception if the call fails' do
+      Systemd::Journal::Native.should_receive(:sd_journal_add_disjunction).and_return(-1)
+
+      j = Systemd::Journal.new
+      expect{ j.add_disjunction }.to raise_error(Systemd::JournalError)
+    end
   end
 
-  describe '#clear_matches' do
-    pending
+  describe '#clear_filters' do
+    it 'flushes the matches' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_flush_matches).and_return(nil)
+      j.clear_filters
+    end
   end
 
   describe '#disk_usage' do
     it 'returns the size used on disk' do
       Systemd::Journal::Native.should_receive(:sd_journal_get_usage) do |ptr, size_ptr|
-        size_ptr.size == 8 ? size_ptr.write_uint64(12) : size_ptr.write_uint32(12)
+        size_ptr.write_size_t(12)
         0
       end
       j = Systemd::Journal.new
@@ -143,6 +354,97 @@ describe Systemd::Journal do
       j = Systemd::Journal.new
       expect { j.disk_usage }.to raise_error(Systemd::JournalError)
     end
+  end
+
+  describe '#data_threshold=' do
+    it 'sets the data threshold' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_set_data_threshold).
+        with(anything, 0x1234).and_return(0)
+
+      j.data_threshold = 0x1234
+    end
+
+    it 'raises a JournalError on failure' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_set_data_threshold).
+        with(anything, 0x1234).and_return(-1)
+
+      expect { j.data_threshold = 0x1234 }.to raise_error(Systemd::JournalError)
+    end
+  end
+
+  describe '#data_threshold' do
+    it 'gets the data threshold' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_get_data_threshold) do |ptr, size_ptr|
+        size_ptr.write_size_t(0x1234)
+        0
+      end
+      j.data_threshold.should eq(0x1234)
+    end
+
+    it 'raises a JournalError on failure' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_get_data_threshold).
+        and_return(-3)
+
+      expect{ j.data_threshold }.to raise_error(Systemd::JournalError)
+    end
+
+  end
+
+  describe '#cursor?' do
+    it 'returns true if the current cursor is the provided value' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_test_cursor).
+        with(anything, "1234").and_return(1)
+
+      j.cursor?("1234").should eq(true)
+    end
+
+    it 'returns false otherwise' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_test_cursor).
+        with(anything, "1234").and_return(0)
+
+      j.cursor?("1234").should eq(false)
+    end
+
+    it 'raises a JournalError on failure' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_test_cursor).
+        and_return(-3)
+
+      expect{ j.cursor?('123') }.to raise_error(Systemd::JournalError)
+    end
+
+  end
+
+  describe '#cursor' do
+    it 'returns the current cursor' do
+      j = Systemd::Journal.new
+      Systemd::Journal::Native.should_receive(:sd_journal_get_cursor) do |ptr, out_ptr|
+        out_ptr.write_pointer(FFI::MemoryPointer.from_string("5678"))
+        0
+      end
+      j.cursor.should eq("5678")
+    end
+
+    it 'raises a JournalError on failure' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_get_cursor).
+        and_return(-3)
+
+      expect{ j.cursor }.to raise_error(Systemd::JournalError)
+    end
+
   end
 
 end

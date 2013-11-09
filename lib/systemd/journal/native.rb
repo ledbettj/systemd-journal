@@ -22,10 +22,17 @@ module Systemd
       attach_function :sd_journal_seek_tail,          [:pointer], :int
       attach_function :sd_journal_seek_realtime_usec, [:pointer, :uint64], :int
 
+      attach_function :sd_journal_get_cursor,  [:pointer, :pointer], :int
+      attach_function :sd_journal_seek_cursor, [:pointer, :string],  :int
+      attach_function :sd_journal_test_cursor, [:pointer, :string],  :int
+
       # data reading
       attach_function :sd_journal_get_data,       [:pointer, :string, :pointer, :pointer], :int
       attach_function :sd_journal_restart_data,   [:pointer], :void
       attach_function :sd_journal_enumerate_data, [:pointer, :pointer, :pointer], :int
+
+      attach_function :sd_journal_get_data_threshold, [:pointer, :pointer], :int
+      attach_function :sd_journal_set_data_threshold, [:pointer, :size_t],  :int
 
       # querying
       attach_function :sd_journal_query_unique,     [:pointer, :string], :int
@@ -38,7 +45,7 @@ module Systemd
         :append,
         :invalidate
       ]
-      attach_function :sd_journal_wait, [:pointer, :uint64], :wake_reason
+      attach_function :sd_journal_wait, [:pointer, :uint64], :wake_reason, blocking: true
 
       # filtering
       attach_function :sd_journal_add_match,       [:pointer, :string, :size_t], :int
@@ -47,12 +54,12 @@ module Systemd
       attach_function :sd_journal_add_conjunction, [:pointer], :int
 
       # writing
-      attach_function :sd_journal_print, [:int, :string], :int
-      attach_function :sd_journal_send,  [:varargs], :int
-
+      attach_function :sd_journal_print,  [:int, :string], :int
+      attach_function :sd_journal_send,   [:varargs], :int
+      attach_function :sd_journal_perror, [:string], :int
       # misc
       attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
     end
 
-  end
+  end unless $NO_FFI_SPEC
 end

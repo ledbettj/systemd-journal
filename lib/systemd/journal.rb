@@ -3,7 +3,10 @@ require 'systemd/journal/flags'
 require 'systemd/journal/compat'
 require 'systemd/journal/fields'
 require 'systemd/journal_error'
+require 'systemd/journal_entry'
 require 'systemd/id128'
+
+require 'systemd/ffi_size_t'
 
 module Systemd
   # Class to allow interacting with the systemd journal.
@@ -12,6 +15,7 @@ module Systemd
   # {Systemd::Journal::Compat::ClassMethods#message Journal.message} or
   # {Systemd::Journal::Compat::ClassMethods#print Journal.print}.
   class Journal
+    include Enumerable
     include Systemd::Journal::Compat
 
     # Returns a new instance of a Journal, opened with the provided options.
@@ -45,17 +49,62 @@ module Systemd
       ObjectSpace.define_finalizer(self, self.class.finalize(@ptr))
     end
 
+    # Iterate over each entry in the journal, respecting the applied
+    # conjunctions/disjunctions.
+    # If a block is given, it is called with each entry until no more
+    # entries remain.  Otherwise, returns an enumerator which can be chained.
+    def each
+      return to_enum(:each) unless block_given?
+
+      seek(:head)
+      yield current_entry while move_next
+    end
+
+    # Move the read pointer by `offset` entries.
+    # @param [Integer] offset how many entries to move the read pointer by. If
+    #   this value is positive, the read pointer moves forward.  Otherwise, it
+    #   moves backwards.
+    # @return [Integer] the number of entries the read pointer actually moved.
+    def move(offset)
+      offset > 0 ? move_next_skip(offset) : move_previous_skip(-offset)
+    end
+
+    # Filter the journal at a high level.
+    # Takes any number of arguments; each argument should be a hash representing
+    # a condition to filter based on.  Fields inside the hash will be ANDed
+    # together.  Each hash will be ORed with the others.  Fields in hashes with
+    # Arrays as values are treated as an OR statement, since otherwise they
+    # would never match.
+    # @example
+    #   j = Systemd::Journal.filter(
+    #     {_systemd_unit: 'session-4.scope'},
+    #     {priority: [4, 6]},
+    #     {_exe: '/usr/bin/sshd', priority: 1}
+    #   )
+    #   # equivalent to
+    #   (_systemd_unit == 'session-4.scope') ||
+    #   (priority == 4 || priority == 6)     ||
+    #   (_exe == '/usr/bin/sshd' && priority == 1)
+    def filter(*conditions)
+      clear_filters
+
+      last_index = conditions.length - 1
+
+      conditions.each_with_index do |condition, index|
+        add_filters(condition)
+        add_disjunction unless index == last_index
+      end
+    end
+
     # Move the read pointer to the next entry in the journal.
     # @return [Boolean] True if moving to the next entry was successful.
     # @return [Boolean] False if unable to move to the next entry, indicating
     #   that the pointer has reached the end of the journal.
     def move_next
-      case (rc = Native::sd_journal_next(@ptr))
-      when 0 then false
-      when 1 then true
-      else
+      if (rc = Native::sd_journal_next(@ptr)) < 0
         raise JournalError.new(rc) if rc < 0
       end
+      rc > 0
     end
 
     # Move the read pointer forward by `amount` entries.
@@ -73,12 +122,10 @@ module Systemd
     # @return [Boolean] False if unable to move to the previous entry,
     #   indicating that the pointer has reached the beginning of the journal.
     def move_previous
-      case (rc = Native::sd_journal_previous(@ptr))
-      when 0 then false # EOF
-      when 1 then true
-      else
+      if (rc = Native::sd_journal_previous(@ptr)) < 0
         raise JournalError.new(rc) if rc < 0
       end
+      rc > 0
     end
 
     # Move the read pointer backwards by `amount` entries.
@@ -98,7 +145,9 @@ module Systemd
     # @param [Symbol, Time] whence one of :head, :tail, or a Time instance.
     #   `:head` (or `:start`) will seek to the beginning of the journal.
     #   `:tail` (or `:end`) will seek to the end of the journal. When a `Time`
-    #   is provided, seek to the journal entry logged closest to that time.
+    #   is provided, seek to the journal entry logged closest to that time. When
+    #   a String is provided, assume it is a cursor from {#cursor} and seek to
+    #   that entry.
     # @return [True]
     def seek(whence)
       rc = case whence
@@ -110,6 +159,8 @@ module Systemd
              if whence.is_a?(Time)
                # TODO: is this right? who knows.
                Native::sd_journal_seek_realtime_usec(@ptr, whence.to_i * 1_000_000)
+             elsif whence.is_a?(String)
+               Native::sd_journal_seek_cursor(@ptr, whence)
              else
                raise ArgumentError.new("Unknown seek type: #{whence.class}")
              end
@@ -133,11 +184,11 @@ module Systemd
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
 
-      rc = Native::sd_journal_get_data(@ptr, field, out_ptr, len_ptr)
+      rc = Native::sd_journal_get_data(@ptr, field.to_s.upcase, out_ptr, len_ptr)
 
       raise JournalError.new(rc) if rc < 0
 
-      len = read_size_t(len_ptr)
+      len = len_ptr.read_size_t
       out_ptr.read_pointer.read_string_length(len).split('=', 2).last
     end
 
@@ -161,7 +212,7 @@ module Systemd
       results = {}
 
       while (rc = Native::sd_journal_enumerate_data(@ptr, out_ptr, len_ptr)) > 0
-        len = read_size_t(len_ptr)
+        len = len_ptr.read_size_t
         key, value = out_ptr.read_pointer.read_string_length(len).split('=', 2)
         results[key] = value
 
@@ -170,7 +221,7 @@ module Systemd
 
       raise JournalError.new(rc) if rc < 0
 
-      results
+      JournalEntry.new(results)
     end
 
     # Get the list of unique values stored in the journal for the given field.
@@ -186,18 +237,17 @@ module Systemd
     #   end
     def query_unique(field)
       results = []
-      field   = field.to_s.upcase
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
       len_ptr = FFI::MemoryPointer.new(:size_t,  1)
 
       Native::sd_journal_restart_unique(@ptr)
 
-      if (rc = Native::sd_journal_query_unique(@ptr, field)) < 0
+      if (rc = Native::sd_journal_query_unique(@ptr, field.to_s.upcase)) < 0
         raise JournalError.new(rc)
       end
 
       while (rc = Native::sd_journal_enumerate_unique(@ptr, out_ptr, len_ptr)) > 0
-        len = read_size_t(len_ptr)
+        len = len_ptr.read_size_t
         results << out_ptr.read_pointer.read_string_length(len).split('=', 2).last
 
         yield results.last if block_given?
@@ -214,41 +264,73 @@ module Systemd
     # @example Wait for an event for a maximum of 3 seconds
     #   j = Systemd::Journal.new
     #   j.seek(:tail)
-    #   if j.wait(3 * 1_000_000) != :nop
+    #   if j.wait(3 * 1_000_000)
     #     # event occurred
     #   end
-    # @return [Symbol] :nop if the wait time was reached (no events occured).
+    # @return [Nil] if the wait time was reached (no events occured).
     # @return [Symbol] :append if new entries were appened to the journal.
     # @return [Symbol] :invalidate if journal files were added/removed/rotated.
     def wait(timeout_usec = -1)
       rc = Native::sd_journal_wait(@ptr, timeout_usec)
       raise JournalError.new(rc) if rc.is_a?(Fixnum) && rc < 0
-      rc
+      rc == :nop ? nil : rc
+    end
+
+    # Blocks and waits for new entries to be appended to the journal. When new
+    # entries are written, yields them in turn.  Note that this function does
+    # not automatically seek to the end of the journal prior to waiting.
+    # This method Does not return.
+    # @example Print out events as they happen
+    #   j = Systemd::Journal.new
+    #   j.seek(:tail)
+    #   j.watch do |event|
+    #     puts event.message
+    #   end
+    def watch
+      while true
+        if wait
+          yield current_entry while move_next
+        end
+      end
     end
 
     # Add a filter to journal, such that only entries where the given filter
     # matches are returned.
-    # {#move_next} or {#move_previous} must be invoked after adding a match
+    # {#move_next} or {#move_previous} must be invoked after adding a filter
     # before attempting to read from the journal.
     # @param [String] field the column to filter on, e.g. _PID, _EXE.
     # @param [String] value the match to search for, e.g. '/usr/bin/sshd'
     # @return [nil]
-    def add_match(field, value)
+    def add_filter(field, value)
       match = "#{field.to_s.upcase}=#{value}"
       rc = Native::sd_journal_add_match(@ptr, match, match.length)
       raise JournalError.new(rc) if rc < 0
     end
 
+    # Add a set of filters to the journal, such that only entries where the
+    # given filters match are returned.
+    # @param [Hash] filters a set of field/filter value pairs.
+    #   If the filter value is an array, each value in the array is added
+    #   and entries where the specified field matches any of the values is
+    #   returned.
+    # @example Filter by PID and EXE
+    #   j.add_filters(_pid: 6700, _exe: '/usr/bin/sshd')
+    def add_filters(filters)
+      filters.each do |field, value|
+        Array(value).each{ |v| add_filter(field, v) }
+      end
+    end
+
     # Add an OR condition to the filter.  All previously added matches
-    # and any matches added afterwards will be OR-ed together.
+    # will be ORed with the terms following the disjunction.
     # {#move_next} or {#move_previous} must be invoked after adding a match
     # before attempting to read from the journal.
     # @return [nil]
     # @example Filter entries returned using an OR condition
     #   j = Systemd::Journal.new
-    #   j.add_match('PRIORITY', 5)
-    #   j.add_match('_EXE', '/usr/bin/sshd')
+    #   j.add_filter('PRIORITY', 5)
     #   j.add_disjunction
+    #   j.add_filter('_EXE', '/usr/bin/sshd')
     #   while j.move_next
     #     # current_entry is either an sshd event or
     #     # has priority 5
@@ -258,16 +340,16 @@ module Systemd
       raise JournalError.new(rc) if rc < 0
     end
 
-    # Add an AND condition to the filter.  All previously added matches
-    # and any matches added afterwards will be AND-ed together.
+    # Add an AND condition to the filter.  All previously added terms will be
+    # ANDed together with terms following the conjunction.
     # {#move_next} or {#move_previous} must be invoked after adding a match
     # before attempting to read from the journal.
     # @return [nil]
     # @example Filter entries returned using an AND condition
     #   j = Systemd::Journal.new
-    #   j.add_match('PRIORITY', 5)
-    #   j.add_match('_EXE', '/usr/bin/sshd')
+    #   j.add_filter('PRIORITY', 5)
     #   j.add_conjunction
+    #   j.add_filter('_EXE', '/usr/bin/sshd')
     #   while j.move_next
     #     # current_entry is an sshd event with priority 5
     #   end
@@ -276,9 +358,9 @@ module Systemd
       raise JournalError.new(rc) if rc < 0
     end
 
-    # Remove all matches and conjunctions/disjunctions.
+    # Remove all filters and conjunctions/disjunctions.
     # @return [nil]
-    def clear_matches
+    def clear_filters
       Native::sd_journal_flush_matches(@ptr)
     end
 
@@ -295,21 +377,55 @@ module Systemd
       size_ptr.read_uint64
     end
 
+    # Get the maximum length of a data field that will be returned.
+    # Fields longer than this will be truncated.  Default is 64K.
+    # @return [Integer] size in bytes.
+    def data_threshold
+      size_ptr = FFI::MemoryPointer.new(:size_t, 1)
+      if (rc = Native::sd_journal_get_data_threshold(@ptr, size_ptr)) < 0
+        raise JournalError.new(rc)
+      end
+
+      size_ptr.read_size_t
+    end
+
+    # Set the maximum length of a data field that will be returned.
+    # Fields longer than this will be truncated.
+    def data_threshold=(threshold)
+      if (rc = Native::sd_journal_set_data_threshold(@ptr, threshold)) < 0
+        raise JournalError.new(rc)
+      end
+    end
+
+    # returns a string representing the current read position.
+    # This string can be passed to {#seek} or {#cursor?}.
+    # @return [String] a cursor token.
+    def cursor
+      out_ptr = FFI::MemoryPointer.new(:pointer, 1)
+      if (rc = Native.sd_journal_get_cursor(@ptr, out_ptr)) < 0
+        raise JournalError.new(rc)
+      end
+
+      out_ptr.read_pointer.read_string
+    end
+
+    # Check if the read position is currently at the entry represented by the
+    # provided cursor value.
+    # @param c [String] a cursor token returned from {#cursor}.
+    # @return [Boolean] True if the current entry is the one represented by the
+    # provided cursor, False otherwise.
+    def cursor?(c)
+      if (rc = Native.sd_journal_test_cursor(@ptr, c)) < 0
+        raise JournalError.new(rc)
+      end
+
+      rc > 0
+    end
+
     private
 
     def self.finalize(ptr)
       proc{ Native::sd_journal_close(ptr) unless ptr.nil? }
-    end
-
-    def read_size_t(ptr)
-      case ptr.size
-      when 8
-        ptr.read_uint64
-      when 4
-        ptr.read_uint32
-      else
-        raise StandardError.new("Unhandled size_t size: #{ptr.size}")
-      end
     end
 
   end
