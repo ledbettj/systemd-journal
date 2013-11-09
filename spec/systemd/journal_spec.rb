@@ -311,6 +311,15 @@ describe Systemd::Journal do
 
       j.data_threshold = 0x1234
     end
+
+    it 'raises a JournalError on failure' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_set_data_threshold).
+        with(anything, 0x1234).and_return(-1)
+
+      expect { j.data_threshold = 0x1234 }.to raise_error(Systemd::JournalError)
+    end
   end
 
   describe '#data_threshold' do
@@ -323,6 +332,16 @@ describe Systemd::Journal do
       end
       j.data_threshold.should eq(0x1234)
     end
+
+    it 'raises a JournalError on failure' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_get_data_threshold).
+        and_return(-3)
+
+      expect{ j.data_threshold }.to raise_error(Systemd::JournalError)
+    end
+
   end
 
   describe '#cursor?' do
@@ -341,6 +360,16 @@ describe Systemd::Journal do
 
       j.cursor?("1234").should eq(false)
     end
+
+    it 'raises a JournalError on failure' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_test_cursor).
+        and_return(-3)
+
+      expect{ j.cursor?('123') }.to raise_error(Systemd::JournalError)
+    end
+
   end
 
   describe '#cursor' do
@@ -352,6 +381,16 @@ describe Systemd::Journal do
       end
       j.cursor.should eq("5678")
     end
+
+    it 'raises a JournalError on failure' do
+      j = Systemd::Journal.new
+
+      Systemd::Journal::Native.should_receive(:sd_journal_get_cursor).
+        and_return(-3)
+
+      expect{ j.cursor }.to raise_error(Systemd::JournalError)
+    end
+
   end
 
 end
