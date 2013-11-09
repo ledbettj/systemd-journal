@@ -38,7 +38,7 @@ Filter messages included in the journal:
     j.add_match(:_exe, '/usr/bin/sshd')
 
     while j.move_next
-      puts j.current_entry
+      puts j.current_entry.message
     end
 
 See the documentation for more examples.

@@ -18,10 +18,6 @@ module Systemd
       @entry[key] || @entry[key.to_s.upcase]
     end
 
-    def to_s
-      "[#{priority}] #{_systemd_unit}: #{message}"
-    end
-
     def each
       return to_enum(:each) unless block_given?
 
