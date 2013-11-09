@@ -45,7 +45,7 @@ module Systemd
         :append,
         :invalidate
       ]
-      attach_function :sd_journal_wait, [:pointer, :uint64], :wake_reason
+      attach_function :sd_journal_wait, [:pointer, :uint64], :wake_reason, blocking: true
 
       # filtering
       attach_function :sd_journal_add_match,       [:pointer, :string, :size_t], :int
