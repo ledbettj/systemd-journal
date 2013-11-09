@@ -34,11 +34,9 @@ Filter messages included in the journal:
     j = Systemd::Journal.new
 
     # only display entries from SSHD with priority 6.
-    j.add_match(:priority, 6)
-    j.add_match(:_exe, '/usr/bin/sshd')
-
-    while j.move_next
-      puts j.current_entry.message
+    j.filter(priority: 6, _exe: '/usr/bin/sshd')
+    j.each do |entry|
+      puts entry.message
     end
 
 See the documentation for more examples.
