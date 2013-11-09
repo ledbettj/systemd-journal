@@ -175,6 +175,34 @@ module Systemd
       rc == :nop ? nil : rc
     end
 
+    # Block until the journal is changed.
+    # This function differs from {#wait} in the following ways:
+    #   * the timeout parameter is defined in seconds, not microseconds.
+    #   * this function can be interrupted and woken prior to completion.
+    # @param timeout_sec [Fixnum] the maximum number of seconds to wait
+    #   or `nil` to wait indefinitely.
+    # @example Wait for an event for a maximum of 3 seconds
+    #   j = Systemd::Journal.new
+    #   j.seek(:tail)
+    #   if j.select(3)
+    #     # event occurred
+    #   end
+    # @return [Nil] if the wait time was reached (no events occured).
+    # @return [Symbol] :append if new entries were appened to the journal.
+    # @return [Symbol] :invalidate if journal files were added/removed/rotated.
+    def select(timeout_sec = nil)
+      r, *_ = IO.select([io_object], [], [], timeout_sec)
+      r ? reason_for_wakeup : nil
+    end
+
+    # Determine if calls to {#select} will reliably wake when a change occurs.
+    # If it returns false, there might be some (unknown) latency involved
+    # between when an change occurs and when {#select} returns.
+    # @return [Boolean]
+    def select_reliable?
+      Native::sd_journal_reliable_fd(@ptr) > 0
+    end
+
     # Blocks and waits for new entries to be appended to the journal. When new
     # entries are written, yields them in turn.  Note that this function does
     # not automatically seek to the end of the journal prior to waiting.
@@ -280,6 +308,22 @@ module Systemd
       str = ptr.read_string
       LibC.free(ptr)
       str
+    end
+
+    def io_object
+      @io ||= IO.new(file_descriptor, autoclose: false)
+    end
+
+    def file_descriptor
+      fd = Native.sd_journal_get_fd(@ptr)
+      raise JournalError.new(rc) if fd < 0
+      fd
+    end
+
+    def reason_for_wakeup
+      rc = Native.sd_journal_process(@ptr)
+      raise JournalError.new(rc) if rc.is_a?(Fixnum) && rc < 0
+      rc == :nop ? nil : rc
     end
   end
 end

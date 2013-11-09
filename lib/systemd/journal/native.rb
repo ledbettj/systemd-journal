@@ -45,12 +45,11 @@ module Systemd
       attach_function :sd_journal_restart_unique,   [:pointer], :void
 
       # event notification
-      enum :wake_reason, [
-        :nop,
-        :append,
-        :invalidate
-      ]
+      enum            :wake_reason,     [:nop, :append, :invalidate]
       attach_function :sd_journal_wait, [:pointer, :uint64], :wake_reason, blocking: true
+      attach_function :sd_journal_get_fd,      [:pointer], :int
+      attach_function :sd_journal_process,     [:pointer], :wake_reason
+      attach_function :sd_journal_reliable_fd, [:pointer], :int
 
       # filtering
       attach_function :sd_journal_add_match,       [:pointer, :string, :size_t], :int
