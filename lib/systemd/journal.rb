@@ -253,7 +253,7 @@ module Systemd
     # entries are written, yields them in turn.  Note that this function does
     # not automatically seek to the end of the journal prior to waiting.
     # This method Does not return.
-    # #example Print out events as they happen
+    # @example Print out events as they happen
     #   j = Systemd::Journal.new
     #   j.seek(:tail)
     #   j.watch do |event|
