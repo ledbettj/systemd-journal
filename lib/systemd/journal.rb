@@ -215,6 +215,27 @@ module Systemd
       JournalEntry.new(results)
     end
 
+    def current_catalog
+      out_ptr = FFI::MemoryPointer.new(:pointer, 1)
+
+      rc = Native::sd_journal_get_catalog(@ptr, out_ptr)
+      raise JournalError.new(rc) if rc <  0
+
+      Journal.read_and_free_outstr(out_ptr.read_pointer)
+    end
+
+    def self.catalog_for(message_id)
+      out_ptr = FFI::MemoryPointer.new(:pointer, 1)
+      
+      rc = Native::sd_journal_get_catalog_for_message_id(
+        Systemd::Id128::Native::Id128.from_s(message_id),
+        out_ptr
+      )
+      raise JournalError.new(rc) if rc < 0
+
+      read_and_free_outstr(out_ptr.read_pointer)
+    end
+
     # Get the list of unique values stored in the journal for the given field.
     # If passed a block, each possible value will be yielded.
     # @return [Array] the list of possible values.
@@ -389,7 +410,7 @@ module Systemd
         raise JournalError.new(rc)
       end
 
-      read_and_free_outstr(out_ptr.read_pointer)
+      Journal.read_and_free_outstr(out_ptr.read_pointer)
     end
 
     # Check if the read position is currently at the entry represented by the
@@ -430,7 +451,7 @@ module Systemd
     # some sd_journal_* functions return strings that we're expected to free
     # ourselves. This function copies the string from a char* to a ruby string,
     # frees the char*, and returns the ruby string.
-    def read_and_free_outstr(ptr)
+    def self.read_and_free_outstr(ptr)
       str = ptr.read_string
       LibC.free(ptr)
       str

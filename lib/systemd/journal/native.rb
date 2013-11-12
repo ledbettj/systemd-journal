@@ -1,3 +1,5 @@
+require 'systemd/id128'
+
 module Systemd
   class Journal
     # Provides the FFI bindings to the native `libsystemd-journal` shared
@@ -31,6 +33,8 @@ module Systemd
       attach_function :sd_journal_get_data,       [:pointer, :string, :pointer, :pointer], :int
       attach_function :sd_journal_restart_data,   [:pointer], :void
       attach_function :sd_journal_enumerate_data, [:pointer, :pointer, :pointer], :int
+      attach_function :sd_journal_get_catalog,    [:pointer, :pointer], :int
+      attach_function :sd_journal_get_catalog_for_message_id, [Systemd::Id128::Native::Id128.by_value, :pointer], :int
 
       attach_function :sd_journal_get_data_threshold, [:pointer, :pointer], :int
       attach_function :sd_journal_set_data_threshold, [:pointer, :size_t],  :int
