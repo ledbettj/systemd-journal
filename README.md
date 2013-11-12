@@ -2,7 +2,8 @@
 
 Ruby bindings for reading from the systemd journal.
 
-* [documentation](http://rubydoc.info/gems/systemd-journal)
+* [Gem documentation](http://rubydoc.info/gems/systemd-journal)
+* [libsystemd-journal documentation](http://www.freedesktop.org/software/systemd/man/sd-journal.html)
 
 ## Installation
 
@@ -58,6 +59,10 @@ Moving around the journal:
 
      
 See the documentation for more examples.
+
+## Issues?
+
+If you run into problems or have questions, please open an [Issue](https://github.com/ledbettj/systemd-journal/issues).
 
 ## Contributing
 
