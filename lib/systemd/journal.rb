@@ -406,7 +406,7 @@ module Systemd
         raise JournalError.new(rc)
       end
 
-      out_ptr.read_pointer.read_string
+      read_and_free_outstr(out_ptr.read_pointer)
     end
 
     # Check if the read position is currently at the entry represented by the
@@ -426,6 +426,15 @@ module Systemd
 
     def self.finalize(ptr)
       proc{ Native::sd_journal_close(ptr) unless ptr.nil? }
+    end
+
+    # some sd_journal_* functions return strings that we're expected to free
+    # ourselves.  This function copies the string from a char* to a ruby string,
+    # frees the char*, and returns the ruby string.
+    def read_and_free_outstr(ptr)
+      str = ptr.read_string
+      LibC.free(ptr)
+      str
     end
 
   end

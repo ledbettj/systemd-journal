@@ -429,8 +429,14 @@ describe Systemd::Journal do
   describe '#cursor' do
     it 'returns the current cursor' do
       j = Systemd::Journal.new
+
       Systemd::Journal::Native.should_receive(:sd_journal_get_cursor) do |ptr, out_ptr|
-        out_ptr.write_pointer(FFI::MemoryPointer.from_string("5678"))
+        # this memory will be manually freed. not setting autorelease to false
+        # would cause a double free.
+        str = FFI::MemoryPointer.from_string("5678")
+        str.autorelease = false
+
+        out_ptr.write_pointer(str)
         0
       end
       j.cursor.should eq("5678")

@@ -62,4 +62,13 @@ module Systemd
     end
 
   end unless $NO_FFI_SPEC
+
+  module LibC
+    require 'ffi'
+    extend FFI::Library
+    ffi_lib FFI::Library::LIBC
+
+    attach_function :free, [:pointer], :void
+  end
+
 end
