@@ -38,9 +38,9 @@ module Systemd
       ptr   = FFI::MemoryPointer.new(:pointer, 1)
 
       rc = if path
-             Native::sd_journal_open_directory(ptr, path, 0)
+             Native.sd_journal_open_directory(ptr, path, 0)
            else
-             Native::sd_journal_open(ptr, flags)
+             Native.sd_journal_open(ptr, flags)
            end
 
       raise JournalError.new(rc) if rc < 0
@@ -101,9 +101,8 @@ module Systemd
     # @return [Boolean] False if unable to move to the next entry, indicating
     #   that the pointer has reached the end of the journal.
     def move_next
-      if (rc = Native::sd_journal_next(@ptr)) < 0
-        raise JournalError.new(rc) if rc < 0
-      end
+      rc = Native.sd_journal_next(@ptr)
+      raise JournalError.new(rc) if rc < 0
       rc > 0
     end
 
@@ -112,7 +111,7 @@ module Systemd
     #   moved. If this number is less than the requested amount, the read
     #   pointer has reached the end of the journal.
     def move_next_skip(amount)
-      rc = Native::sd_journal_next_skip(@ptr, amount)
+      rc = Native.sd_journal_next_skip(@ptr, amount)
       raise JournalError.new(rc) if rc < 0
       rc
     end
@@ -122,9 +121,8 @@ module Systemd
     # @return [Boolean] False if unable to move to the previous entry,
     #   indicating that the pointer has reached the beginning of the journal.
     def move_previous
-      if (rc = Native::sd_journal_previous(@ptr)) < 0
-        raise JournalError.new(rc) if rc < 0
-      end
+      rc = Native.sd_journal_previous(@ptr)
+      raise JournalError.new(rc) if rc < 0
       rc > 0
     end
 
@@ -133,7 +131,7 @@ module Systemd
     #   was moved.  If this number is less than the requested amount, the read
     #   pointer has reached the beginning of the journal.
     def move_previous_skip(amount)
-      rc = Native::sd_journal_previous_skip(@ptr, amount)
+      rc = Native.sd_journal_previous_skip(@ptr, amount)
       raise JournalError.new(rc) if rc < 0
       rc
     end
@@ -152,15 +150,15 @@ module Systemd
     def seek(whence)
       rc = case whence
            when :head, :start
-             Native::sd_journal_seek_head(@ptr)
+             Native.sd_journal_seek_head(@ptr)
            when :tail, :end
-             Native::sd_journal_seek_tail(@ptr)
+             Native.sd_journal_seek_tail(@ptr)
            else
              if whence.is_a?(Time)
                # TODO: is this right? who knows.
-               Native::sd_journal_seek_realtime_usec(@ptr, whence.to_i * 1_000_000)
+               Native.sd_journal_seek_realtime_usec(@ptr, whence.to_i * 1_000_000)
              elsif whence.is_a?(String)
-               Native::sd_journal_seek_cursor(@ptr, whence)
+               Native.sd_journal_seek_cursor(@ptr, whence)
              else
                raise ArgumentError.new("Unknown seek type: #{whence.class}")
              end
@@ -184,7 +182,7 @@ module Systemd
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
 
-      rc = Native::sd_journal_get_data(@ptr, field.to_s.upcase, out_ptr, len_ptr)
+      rc = Native.sd_journal_get_data(@ptr, field.to_s.upcase, out_ptr, len_ptr)
 
       raise JournalError.new(rc) if rc < 0
 
@@ -205,21 +203,14 @@ module Systemd
     #   j.move_next
     #   j.current_entry{ |field, value| puts "#{field}: #{value}" }
     def current_entry
-      Native::sd_journal_restart_data(@ptr)
-
-      len_ptr = FFI::MemoryPointer.new(:size_t, 1)
-      out_ptr = FFI::MemoryPointer.new(:pointer, 1)
+      Native.sd_journal_restart_data(@ptr)
       results = {}
 
-      while (rc = Native::sd_journal_enumerate_data(@ptr, out_ptr, len_ptr)) > 0
-        len = len_ptr.read_size_t
-        key, value = out_ptr.read_pointer.read_string_length(len).split('=', 2)
+      while (kvpair = enumerate_helper(:sd_journal_enumerate_data))
+        key, value = kvpair
         results[key] = value
-
         yield(key, value) if block_given?
       end
-
-      raise JournalError.new(rc) if rc < 0
 
       JournalEntry.new(results)
     end
@@ -237,23 +228,15 @@ module Systemd
     #   end
     def query_unique(field)
       results = []
-      out_ptr = FFI::MemoryPointer.new(:pointer, 1)
-      len_ptr = FFI::MemoryPointer.new(:size_t,  1)
 
-      Native::sd_journal_restart_unique(@ptr)
+      Native.sd_journal_restart_unique(@ptr)
 
-      if (rc = Native::sd_journal_query_unique(@ptr, field.to_s.upcase)) < 0
-        raise JournalError.new(rc)
-      end
-
-      while (rc = Native::sd_journal_enumerate_unique(@ptr, out_ptr, len_ptr)) > 0
-        len = len_ptr.read_size_t
-        results << out_ptr.read_pointer.read_string_length(len).split('=', 2).last
-
-        yield results.last if block_given?
-      end
-
+      rc = Native.sd_journal_query_unique(@ptr, field.to_s.upcase)
       raise JournalError.new(rc) if rc < 0
+
+      while (kvpair = enumerate_helper(:sd_journal_enumerate_unique))
+        results << kvpair.last
+      end
 
       results
     end
@@ -271,7 +254,7 @@ module Systemd
     # @return [Symbol] :append if new entries were appened to the journal.
     # @return [Symbol] :invalidate if journal files were added/removed/rotated.
     def wait(timeout_usec = -1)
-      rc = Native::sd_journal_wait(@ptr, timeout_usec)
+      rc = Native.sd_journal_wait(@ptr, timeout_usec)
       raise JournalError.new(rc) if rc.is_a?(Fixnum) && rc < 0
       rc == :nop ? nil : rc
     end
@@ -303,7 +286,7 @@ module Systemd
     # @return [nil]
     def add_filter(field, value)
       match = "#{field.to_s.upcase}=#{value}"
-      rc = Native::sd_journal_add_match(@ptr, match, match.length)
+      rc = Native.sd_journal_add_match(@ptr, match, match.length)
       raise JournalError.new(rc) if rc < 0
     end
 
@@ -336,7 +319,7 @@ module Systemd
     #     # has priority 5
     #   end
     def add_disjunction
-      rc = Native::sd_journal_add_disjunction(@ptr)
+      rc = Native.sd_journal_add_disjunction(@ptr)
       raise JournalError.new(rc) if rc < 0
     end
 
@@ -354,14 +337,14 @@ module Systemd
     #     # current_entry is an sshd event with priority 5
     #   end
     def add_conjunction
-      rc = Native::sd_journal_add_conjunction(@ptr)
+      rc = Native.sd_journal_add_conjunction(@ptr)
       raise JournalError.new(rc) if rc < 0
     end
 
     # Remove all filters and conjunctions/disjunctions.
     # @return [nil]
     def clear_filters
-      Native::sd_journal_flush_matches(@ptr)
+      Native.sd_journal_flush_matches(@ptr)
     end
 
     # Get the number of bytes the Journal is currently using on disk.
@@ -371,7 +354,7 @@ module Systemd
     # @return [Integer] size in bytes
     def disk_usage
       size_ptr = FFI::MemoryPointer.new(:uint64)
-      rc = Native::sd_journal_get_usage(@ptr, size_ptr)
+      rc = Native.sd_journal_get_usage(@ptr, size_ptr)
 
       raise JournalError.new(rc) if rc < 0
       size_ptr.read_uint64
@@ -382,7 +365,7 @@ module Systemd
     # @return [Integer] size in bytes.
     def data_threshold
       size_ptr = FFI::MemoryPointer.new(:size_t, 1)
-      if (rc = Native::sd_journal_get_data_threshold(@ptr, size_ptr)) < 0
+      if (rc = Native.sd_journal_get_data_threshold(@ptr, size_ptr)) < 0
         raise JournalError.new(rc)
       end
 
@@ -392,7 +375,7 @@ module Systemd
     # Set the maximum length of a data field that will be returned.
     # Fields longer than this will be truncated.
     def data_threshold=(threshold)
-      if (rc = Native::sd_journal_set_data_threshold(@ptr, threshold)) < 0
+      if (rc = Native.sd_journal_set_data_threshold(@ptr, threshold)) < 0
         raise JournalError.new(rc)
       end
     end
@@ -425,7 +408,19 @@ module Systemd
     private
 
     def self.finalize(ptr)
-      proc{ Native::sd_journal_close(ptr) unless ptr.nil? }
+      proc{ Native.sd_journal_close(ptr) unless ptr.nil? }
+    end
+
+    def enumerate_helper(enum_function)
+      len_ptr = FFI::MemoryPointer.new(:size_t, 1)
+      out_ptr = FFI::MemoryPointer.new(:pointer, 1)
+
+      rc = Native.send(enum_function, @ptr, out_ptr, len_ptr)
+      raise JournalError.new(rc) if rc < 0
+      return nil if rc == 0
+
+      len = len_ptr.read_size_t
+      out_ptr.read_pointer.read_string_length(len).split('=', 2)
     end
 
     # some sd_journal_* functions return strings that we're expected to free
