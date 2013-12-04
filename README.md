@@ -2,7 +2,8 @@
 
 Ruby bindings for reading from the systemd journal.
 
-* [documentation](http://rubydoc.info/gems/systemd-journal)
+* [gem documentation](http://rubydoc.info/gems/systemd-journal)
+* [libsystemd-journal documentation](http://www.freedesktop.org/software/systemd/man/sd-journal.html)
 
 ## Installation
 
@@ -13,6 +14,11 @@ Add this line to your application's Gemfile:
 And then execute:
 
     bundle install
+
+Obviously you will need to have [systemd](http://www.freedesktop.org/wiki/Software/systemd/)
+installed on your system in order to use the gem.  The two native library
+dependencies are `libsystemd-journal` and `libsystemd-id128`.
+
 
 ## Usage
 
@@ -30,17 +36,17 @@ Print all messages as they occur:
 Filter events and iterate:
 
     j = Systemd::Journal.new
-    
+
     # only display entries from SSHD with priority 6.
     j.filter(priority: 6, _exe: '/usr/bin/sshd')
     j.each do |entry|
       puts entry.message
     end
-    
+
 Moving around the journal:
 
     j = Systemd::Journal.new
-    
+
     j.seek(:head)   # move to the start of journal
     j.move(10)      # move forward by 10 entries
     c = j.cursor    # get a reference to this entry
@@ -50,14 +56,19 @@ Moving around the journal:
     j.seek(:tail)   # move to end of the journal
     j.move_previous # move back
     j.move_next     # move forward
-    
+
     j.current_entry # get the entry we're currently positioned at
-    
+
     # seek the entry that occured closest to this time
     j.seek(Time.parse("2013-10-31T12:00:00+04:00:00"))
 
-     
+
 See the documentation for more examples.
+
+## Issues?
+
+If you run into problems or have questions, please open an
+[Issue](https://github.com/ledbettj/systemd-journal/issues).
 
 ## Contributing
 

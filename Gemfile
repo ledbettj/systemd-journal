@@ -6,3 +6,4 @@ gemspec
 gem 'pry'
 gem 'rake'
 gem 'yard'
+gem 'rubocop'

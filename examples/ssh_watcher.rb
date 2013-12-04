@@ -8,10 +8,8 @@ class SSHWatcher
   end
 
   def run
-    @journal.add_match(:_exe, '/usr/bin/sshd')
-    # skip all existing entries -- sd_journal_seek_tail() is currently broken.
-    while @journal.move_next ; end
-
+    @journal.filter(_exe: '/usr/bin/sshd')
+    @journal.seek(:tail)
     @journal.watch{ |entry| process_event(entry) }
   end
 
