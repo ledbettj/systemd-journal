@@ -206,9 +206,10 @@ module Systemd
       Native.sd_journal_restart_data(@ptr)
       results = {}
 
-      while (kvpair = enumerate_data)
-        results[kvpair.first] = kvpair.last
-        yield(*kvpair) if block_given?
+      while (kvpair = enumerate_helper(:sd_journal_enumerate_data))
+        key, value = kvpair
+        results[key] = value
+        yield(key, value) if block_given?
       end
 
       JournalEntry.new(results)
@@ -233,8 +234,8 @@ module Systemd
       rc = Native.sd_journal_query_unique(@ptr, field.to_s.upcase)
       raise JournalError.new(rc) if rc < 0
 
-      while (item = enumerate_unique)
-        results << item
+      while (kvpair = enumerate_helper(:sd_journal_enumerate_unique))
+        results << kvpair.last
       end
 
       results
@@ -410,23 +411,11 @@ module Systemd
       proc{ Native.sd_journal_close(ptr) unless ptr.nil? }
     end
 
-    def enumerate_unique
+    def enumerate_helper(enum_function)
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
 
-      rc = Native.sd_journal_enumerate_unique(@ptr, out_ptr, len_ptr)
-      raise JournalError.new(rc) if rc < 0
-      return nil if rc == 0
-
-      len = len_ptr.read_size_t
-      out_ptr.read_pointer.read_string_length(len).split('=', 2).last
-    end
-
-    def enumerate_data
-      len_ptr = FFI::MemoryPointer.new(:size_t, 1)
-      out_ptr = FFI::MemoryPointer.new(:pointer, 1)
-
-      rc = Native.sd_journal_enumerate_data(@ptr, out_ptr, len_ptr)
+      rc = Native.send(enum_function, @ptr, out_ptr, len_ptr)
       raise JournalError.new(rc) if rc < 0
       return nil if rc == 0
 
