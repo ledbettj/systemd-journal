@@ -181,13 +181,13 @@ module Systemd
     def read_field(field)
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
-
-      rc = Native.sd_journal_get_data(@ptr, field.to_s.upcase, out_ptr, len_ptr)
+      field   = field.to_s.upcase
+      rc = Native.sd_journal_get_data(@ptr, field, out_ptr, len_ptr)
 
       raise JournalError.new(rc) if rc < 0
 
       len = len_ptr.read_size_t
-      out_ptr.read_pointer.read_string_length(len).split('=', 2).last
+      string_from_out_ptr(out_ptr, len).split('=', 2).last
     end
 
     # Read the contents of all fields from the current journal entry.
@@ -270,7 +270,7 @@ module Systemd
     #     puts event.message
     #   end
     def watch
-      while true
+      loop do
         if wait
           yield current_entry while move_next
         end
@@ -420,17 +420,20 @@ module Systemd
       return nil if rc == 0
 
       len = len_ptr.read_size_t
-      out_ptr.read_pointer.read_string_length(len).split('=', 2)
+      string_from_out_ptr(out_ptr, len).split('=', 2)
+    end
+
+    def string_from_out_ptr(p, len)
+      p.read_pointer.read_string_length(len)
     end
 
     # some sd_journal_* functions return strings that we're expected to free
-    # ourselves.  This function copies the string from a char* to a ruby string,
+    # ourselves. This function copies the string from a char* to a ruby string,
     # frees the char*, and returns the ruby string.
     def read_and_free_outstr(ptr)
       str = ptr.read_string
       LibC.free(ptr)
       str
     end
-
   end
 end

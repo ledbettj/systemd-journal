@@ -20,9 +20,7 @@ module Systemd
 
     def each
       return to_enum(:each) unless block_given?
-
       @entry.each{ |key, value| yield [key, value] }
     end
-
   end
 end

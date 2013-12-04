@@ -1,4 +1,8 @@
 SignalException:
   Enabled: false
+
 RaiseArgs:
   Enabled: false
+
+SpaceAroundBlockBraces:
+  EnforcedStyle: space_inside_braces
