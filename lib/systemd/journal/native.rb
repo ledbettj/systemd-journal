@@ -1,8 +1,9 @@
 module Systemd
   class Journal
     # Provides the FFI bindings to the native `libsystemd-journal` shared
-    #   library.
+    #  library.
     module Native
+      # rubocop:disable LineLength
       require 'ffi'
       extend FFI::Library
       ffi_lib %w[libsystemd-journal.so libsystemd-journal.so.0]
@@ -60,9 +61,9 @@ module Systemd
       # misc
       attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
     end
-
   end unless $NO_FFI_SPEC
 
+  # @private
   module LibC
     require 'ffi'
     extend FFI::Library
@@ -70,5 +71,4 @@ module Systemd
 
     attach_function :free, [:pointer], :void
   end
-
 end

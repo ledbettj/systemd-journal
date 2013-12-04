@@ -1,8 +1,9 @@
 require 'ffi'
 
 module Systemd
+  # Provides access to the 128-bit IDs for various items in the systemd
+  # ecosystem, such as the machine id and boot id.
   module Id128
-
     # Get the 128-bit hex string identifying the current machine.
     # Can be used to filter a journal to show only messages originating
     # from this machine.
@@ -52,13 +53,14 @@ module Systemd
         attach_function :sd_id128_randomize,   [:pointer], :int
       end
 
+      # @private
       class Id128 < FFI::Union
         layout :bytes,  [:uint8, 16],
                :dwords, [:uint32, 4],
                :qwords, [:uint64, 2]
 
         def to_s
-          ("%02x" * 16) % self[:bytes].to_a
+          ('%02x' * 16) % self[:bytes].to_a
         end
       end
     end

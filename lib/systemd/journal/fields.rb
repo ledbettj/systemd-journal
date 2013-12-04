@@ -12,7 +12,7 @@ module Systemd
                          _MACHINE_ID _HOSTNAME _TRANSPORT }
 
     # Fields used in messages originating from the kernel.
-    KERNEL_FIELDS = %w{ _KERNEL_DEVICE _KERNEL_SUBSYSTEM _UDEV_SYSNAME _UDEV_DEVNODE _UDEV_DEVLINK }
-
+    KERNEL_FIELDS = %w{ _KERNEL_DEVICE _KERNEL_SUBSYSTEM _UDEV_SYSNAME
+                        _UDEV_DEVNODE _UDEV_DEVLINK }
   end
 end

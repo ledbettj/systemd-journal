@@ -6,7 +6,6 @@ module Systemd
     # This module provides compatibility with the systemd-journal.gem
     # by Daniel Mack (https://github.com/zonque/systemd-journal.gem)
     module Compat
-
        # system is unusable
       LOG_EMERG   = 0
       # action must be taken immediately
@@ -32,12 +31,11 @@ module Systemd
       # methods in this module will be available as class methods on
       #  {Systemd::Journal}
       module ClassMethods
-
         # write the value of the c errno constant to the systemd journal in the
         # style of the perror() function.
         # @param [String] message the text to prefix the error message with.
         def perror(message)
-          rc = Native::sd_journal_perror(message)
+          rc = Native.sd_journal_perror(message)
           raise JournalError.new(rc) if rc < 0
         end
 
@@ -46,23 +44,22 @@ module Systemd
         #   severity of the event.
         # @param [String] message the content of the message to write.
         def print(level, message)
-          rc = Native::sd_journal_print(level, message)
+          rc = Native.sd_journal_print(level, message)
           raise JournalError.new(rc) if rc < 0
         end
 
         # write an event to the systemd journal.
         # @param [Hash] contents the set of key-value pairs defining the event.
         def message(contents)
-          items = contents.flat_map do |k,v|
+          items = contents.flat_map do |k, v|
             [:string, "#{k.to_s.upcase}=#{v}"]
           end
           # add a null pointer to terminate the varargs
           items += [:string, nil]
-          rc = Native::sd_journal_send(*items)
+          rc = Native.sd_journal_send(*items)
           raise JournalError.new(rc) if rc < 0
         end
       end
-
     end
   end
 end
