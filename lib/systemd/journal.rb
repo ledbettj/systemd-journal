@@ -1,6 +1,6 @@
 require 'systemd/journal/native'
 require 'systemd/journal/flags'
-require 'systemd/journal/compat'
+require 'systemd/journal/writable'
 require 'systemd/journal/fields'
 require 'systemd/journal/navigation'
 require 'systemd/journal/filtering'
@@ -14,11 +14,11 @@ module Systemd
   # Class to allow interacting with the systemd journal.
   # To read from the journal, instantiate a new {Systemd::Journal}; to write to
   # the journal, use
-  # {Systemd::Journal::Compat::ClassMethods#message Journal.message} or
-  # {Systemd::Journal::Compat::ClassMethods#print Journal.print}.
+  # {Systemd::Journal::Writable::ClassMethods#message Journal.message} or
+  # {Systemd::Journal::Writable::ClassMethods#print Journal.print}.
   class Journal
     include Enumerable
-    include Systemd::Journal::Compat
+    include Systemd::Journal::Writable
     include Systemd::Journal::Navigation
     include Systemd::Journal::Filtering
 
