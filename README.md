@@ -80,3 +80,7 @@ If you run into problems or have questions, please open an
 6. Wipe hands on pants, you're done.
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ledbettj/systemd-journal/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ledbettj/systemd-journal/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
