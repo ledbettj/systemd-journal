@@ -78,3 +78,5 @@ If you run into problems or have questions, please open an
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request, targeting the __develop__ branch.
 6. Wipe hands on pants, you're done.
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ledbettj/systemd-journal/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
