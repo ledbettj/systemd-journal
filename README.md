@@ -1,4 +1,4 @@
-# Systemd::Journal [![Gem Version](https://badge.fury.io/rb/systemd-journal.png)](http://badge.fury.io/rb/systemd-journal)  [![Build Status](https://travis-ci.org/ledbettj/systemd-journal.png?branch=master)](https://travis-ci.org/ledbettj/systemd-journal)
+# Systemd::Journal [![Gem Version](https://badge.fury.io/rb/systemd-journal.png)](http://badge.fury.io/rb/systemd-journal)  [![Build Status](https://travis-ci.org/ledbettj/systemd-journal.png?branch=master)](https://travis-ci.org/ledbettj/systemd-journal) [![Code Climate](https://codeclimate.com/github/ledbettj/systemd-journal.png)](https://codeclimate.com/github/ledbettj/systemd-journal)
 
 Ruby bindings for reading from the systemd journal.
 
@@ -78,3 +78,9 @@ If you run into problems or have questions, please open an
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request, targeting the __develop__ branch.
 6. Wipe hands on pants, you're done.
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ledbettj/systemd-journal/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ledbettj/systemd-journal/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
