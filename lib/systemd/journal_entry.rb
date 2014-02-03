@@ -29,5 +29,27 @@ module Systemd
       return to_enum(:each) unless block_given?
       @entry.each{ |key, value| yield [key, value] }
     end
+
+    def catalog(opts = {})
+      return nil unless catalog?
+
+      opts[:replace] = true unless opts.key?(:replace)
+
+      cat = Systemd::Journal.catalog_for(self[:message_id])
+      # catalog_for does not do field substitution for us, so we do it here
+      # if requested
+      opts[:replace] ? field_substitute(cat) : cat
+    end
+
+    def catalog?
+      !self[:message_id].nil?
+    end
+
+    private
+
+    def field_substitute(msg)
+      msg.gsub(/@[A-Z_0-9]+@/){ |field| self[field[1..-2]] || field }
+    end
+
   end
 end

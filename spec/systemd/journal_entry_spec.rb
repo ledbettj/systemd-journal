@@ -40,4 +40,43 @@ describe Systemd::JournalEntry do
     subject.fields.should eq([:_pid, :_exe, :priority, :object_id])
   end
 
+  it 'should not have a catalog' do
+    subject.catalog?.should eq(false)
+  end
+
+  context 'with catalogs' do
+    subject do
+      Systemd::JournalEntry.new(
+        '_PID'       => '125',
+        '_EXE'       => '/usr/bin/sshd',
+        'PRIORITY'   => '4',
+        'MESSAGE_ID' => 'ab1fced28a0'
+      )
+    end
+
+    describe '#catalog?' do
+      it 'returns true if the entry has a message ID' do
+        subject.catalog?.should eq(true)
+      end
+    end
+
+    describe '#catalog' do
+
+      it 'asks the journal for the message with our ID' do
+        Systemd::Journal.should_receive(:catalog_for).with('ab1fced28a0').and_return('catalog')
+        subject.catalog.should eq('catalog')
+      end
+
+      it 'does field replacement by default' do
+        Systemd::Journal.should_receive(:catalog_for).with('ab1fced28a0').and_return('catalog @_PID@ @PRIORITY@')
+        subject.catalog.should eq('catalog 125 4')
+      end
+
+      it 'skips field replacement if requested' do
+        Systemd::Journal.should_receive(:catalog_for).with('ab1fced28a0').and_return('catalog @_PID@ @PRIORITY@')
+        subject.catalog(replace: false).should eq('catalog @_PID@ @PRIORITY@')
+      end
+    end
+  end
+
 end
