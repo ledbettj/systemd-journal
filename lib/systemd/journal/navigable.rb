@@ -1,6 +1,6 @@
 module Systemd
   class Journal
-    module Navigation
+    module Navigable
       # returns a string representing the current read position.
       # This string can be passed to {#seek} or {#cursor?}.
       # @return [String] a cursor token.

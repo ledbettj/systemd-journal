@@ -2,7 +2,7 @@ require 'systemd/journal/native'
 require 'systemd/journal/flags'
 require 'systemd/journal/writable'
 require 'systemd/journal/fields'
-require 'systemd/journal/navigation'
+require 'systemd/journal/navigable'
 require 'systemd/journal/filterable'
 require 'systemd/journal/waitable'
 require 'systemd/journal_error'
@@ -20,7 +20,7 @@ module Systemd
   class Journal
     include Enumerable
     include Systemd::Journal::Writable
-    include Systemd::Journal::Navigation
+    include Systemd::Journal::Navigable
     include Systemd::Journal::Filterable
     include Systemd::Journal::Waitable
 
