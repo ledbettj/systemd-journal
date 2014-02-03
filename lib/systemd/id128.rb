@@ -62,6 +62,15 @@ module Systemd
         def to_s
           ('%02x' * 16) % self[:bytes].to_a
         end
+
+        def self.from_s(str)
+          r = Id128.new
+          [str].pack('H*').bytes.each_with_index do |b, i|
+            r[:bytes][i] = b
+          end
+
+          r
+        end
       end
     end
   end

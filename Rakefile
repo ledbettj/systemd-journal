@@ -1,15 +1,15 @@
-require "bundler/gem_tasks"
-require "yard"
-require "rspec/core/rake_task"
-require "rubocop/rake_task"
+require 'bundler/gem_tasks'
+require 'yard'
+require 'rspec/core/rake_task'
+require 'rubocop/rake_task'
 
-desc "open a console with systemd/journal required"
+desc 'open a console with systemd/journal required'
 task :console do
   exec 'pry -I./lib -r systemd/journal'
 end
 
 Rubocop::RakeTask.new(:rubocop) do |task|
-  task.patterns = ['lib/**/*.rb']
+  task.patterns = ['lib/**/*.rb', 'spec/**/*.rb']
   task.fail_on_error = false
 end
 

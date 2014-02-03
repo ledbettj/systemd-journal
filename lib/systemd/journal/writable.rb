@@ -3,9 +3,10 @@ require 'systemd/journal_error'
 
 module Systemd
   class Journal
-    # This module provides compatibility with the systemd-journal.gem
-    # by Daniel Mack (https://github.com/zonque/systemd-journal.gem)
-    module Compat
+    # This module provides write access to the systemd Journal, compatible with
+    # the systemd-journal.gem by Daniel Mack
+    # (https://github.com/zonque/systemd-journal.gem).
+    module Writable
        # system is unusable
       LOG_EMERG   = 0
       # action must be taken immediately

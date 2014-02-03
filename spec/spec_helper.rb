@@ -8,7 +8,7 @@ RSpec.configure do |config|
   config.before(:each) do
 
     # Stub open and close calls
-    dummy_open = ->(ptr, flags, path=nil) do
+    dummy_open = ->(ptr, flags, path = nil) do
       ptr.write_pointer(nil)
       0
     end
@@ -19,7 +19,7 @@ RSpec.configure do |config|
 
     # Raise an exception if any native calls are actually called
     native_calls = Systemd::Journal::Native.methods.select do |m|
-      m.to_s.start_with?("sd_")
+      m.to_s.start_with?('sd_')
     end
 
     native_calls -= [
