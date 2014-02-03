@@ -1,6 +1,31 @@
 module Systemd
   class Journal
     module Navigation
+      # returns a string representing the current read position.
+      # This string can be passed to {#seek} or {#cursor?}.
+      # @return [String] a cursor token.
+      def cursor
+        out_ptr = FFI::MemoryPointer.new(:pointer, 1)
+        if (rc = Native.sd_journal_get_cursor(@ptr, out_ptr)) < 0
+          raise JournalError.new(rc)
+        end
+
+        Journal.read_and_free_outstr(out_ptr.read_pointer)
+      end
+
+      # Check if the read position is currently at the entry represented by the
+      # provided cursor value.
+      # @param c [String] a cursor token returned from {#cursor}.
+      # @return [Boolean] True if current entry is the one represented by the
+      # provided cursor, False otherwise.
+      def cursor?(c)
+        if (rc = Native.sd_journal_test_cursor(@ptr, c)) < 0
+          raise JournalError.new(rc)
+        end
+
+        rc > 0
+      end
+
       # Move the read pointer by `offset` entries.
       # @param [Integer] offset how many entries to move the read pointer by.
       #   If this value is positive, the read pointer moves forward. Otherwise,
