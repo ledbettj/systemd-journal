@@ -1,6 +1,6 @@
 module Systemd
   class Journal
-    module Filtering
+    module Filterable
       # Filter the journal at a high level.
       # Takes any number of arguments; each argument should be a hash
       # representing a condition to filter based on.  Fields inside the hash

@@ -3,7 +3,8 @@ require 'systemd/journal/flags'
 require 'systemd/journal/writable'
 require 'systemd/journal/fields'
 require 'systemd/journal/navigation'
-require 'systemd/journal/filtering'
+require 'systemd/journal/filterable'
+require 'systemd/journal/waitable'
 require 'systemd/journal_error'
 require 'systemd/journal_entry'
 require 'systemd/id128'
@@ -20,8 +21,8 @@ module Systemd
     include Enumerable
     include Systemd::Journal::Writable
     include Systemd::Journal::Navigation
-    include Systemd::Journal::Filtering
-
+    include Systemd::Journal::Filterable
+    include Systemd::Journal::Waitable
     # Returns a new instance of a Journal, opened with the provided options.
     # @param [Hash] opts optional initialization parameters.
     # @option opts [Integer] :flags a set of bitwise OR-ed
@@ -157,54 +158,6 @@ module Systemd
       results
     end
 
-    # Block until the journal is changed.
-    # @param timeout_usec [Integer] the maximum number of microseconds to wait
-    #   or `-1` to wait indefinitely.
-    # @example Wait for an event for a maximum of 3 seconds
-    #   j = Systemd::Journal.new
-    #   j.seek(:tail)
-    #   if j.wait(3 * 1_000_000)
-    #     # event occurred
-    #   end
-    # @return [Nil] if the wait time was reached (no events occured).
-    # @return [Symbol] :append if new entries were appened to the journal.
-    # @return [Symbol] :invalidate if journal files were added/removed/rotated.
-    def wait(timeout_usec = -1, opts = {})
-      if opts[:select]
-        wait_select(timeout_usec)
-      else
-        rc = Native.sd_journal_wait(@ptr, timeout_usec)
-        raise JournalError.new(rc) if rc.is_a?(Fixnum) && rc < 0
-        rc == :nop ? nil : rc
-      end
-    end
-
-    # Determine if calls to {#wait} with `select: true` will reliably wake
-    # when a change occurs. If it returns false, there might be some (unknown)
-    # latency involved  between when an change occurs and when {#wait} returns.
-    # @return [Boolean]
-    def wait_select_reliable?
-      Native.sd_journal_reliable_fd(@ptr) > 0
-    end
-
-    # Blocks and waits for new entries to be appended to the journal. When new
-    # entries are written, yields them in turn.  Note that this function does
-    # not automatically seek to the end of the journal prior to waiting.
-    # This method Does not return.
-    # @example Print out events as they happen
-    #   j = Systemd::Journal.new
-    #   j.seek(:tail)
-    #   j.watch do |event|
-    #     puts event.message
-    #   end
-    def watch
-      loop do
-        if wait
-          yield current_entry while move_next
-        end
-      end
-    end
-
     # Get the number of bytes the Journal is currently using on disk.
     # If {Systemd::Journal::Flags::LOCAL_ONLY} was passed when opening the
     # journal,  this value will only reflect the size of journal files of the
@@ -281,12 +234,6 @@ module Systemd
       string_from_out_ptr(out_ptr, len).split('=', 2)
     end
 
-    def wait_select(timeout_usec)
-      timeout_sec = (timeout_usec == -1 ? nil : timeout_usec / 1e6)
-      r, *_ = IO.select([io_object], [], [], timeout_sec)
-      r ? reason_for_wakeup : nil
-    end
-
     def string_from_out_ptr(p, len)
       p.read_pointer.read_string_length(len)
     end
@@ -298,22 +245,6 @@ module Systemd
       str = ptr.read_string
       LibC.free(ptr)
       str
-    end
-
-    def io_object
-      @io ||= IO.new(file_descriptor, autoclose: false)
-    end
-
-    def file_descriptor
-      fd = Native.sd_journal_get_fd(@ptr)
-      raise JournalError.new(rc) if fd < 0
-      fd
-    end
-
-    def reason_for_wakeup
-      rc = Native.sd_journal_process(@ptr)
-      raise JournalError.new(rc) if rc.is_a?(Fixnum) && rc < 0
-      rc == :nop ? nil : rc
     end
   end
 end
