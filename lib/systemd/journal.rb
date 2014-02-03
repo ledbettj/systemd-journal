@@ -190,7 +190,7 @@ module Systemd
     # @return [Nil] if the wait time was reached (no events occured).
     # @return [Symbol] :append if new entries were appened to the journal.
     # @return [Symbol] :invalidate if journal files were added/removed/rotated.
-    def select(timeout_sec = nil)
+    def wait_select(timeout_sec = nil)
       r, *_ = IO.select([io_object], [], [], timeout_sec)
       r ? reason_for_wakeup : nil
     end
@@ -199,8 +199,8 @@ module Systemd
     # If it returns false, there might be some (unknown) latency involved
     # between when an change occurs and when {#select} returns.
     # @return [Boolean]
-    def select_reliable?
-      Native::sd_journal_reliable_fd(@ptr) > 0
+    def wait_select_reliable?
+      Native.sd_journal_reliable_fd(@ptr) > 0
     end
 
     # Blocks and waits for new entries to be appended to the journal. When new
