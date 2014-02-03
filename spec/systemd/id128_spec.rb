@@ -9,7 +9,7 @@ describe Systemd::Id128 do
         out.write_array_of_uint8(dummy)
         0
       end
-      Systemd::Id128.boot_id.should eq("a10c" * 8)
+      expect(Systemd::Id128.boot_id).to eq('a10c' * 8)
     end
   end
 
@@ -20,7 +20,7 @@ describe Systemd::Id128 do
         out.write_array_of_uint8(dummy)
         0
       end
-      Systemd::Id128.machine_id.should eq("a10c" * 8)
+      expect(Systemd::Id128.machine_id).to eq('a10c' * 8)
     end
   end
 
@@ -31,9 +31,9 @@ describe Systemd::Id128 do
         out.write_array_of_uint8(dummy)
         0
       end
-      Systemd::Id128.random.should eq("a10c" * 8)
-    end    
+      expect(Systemd::Id128.random).to eq('a10c' * 8)
+    end
 
   end
-  
+
 end

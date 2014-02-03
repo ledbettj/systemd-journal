@@ -8,7 +8,7 @@ RSpec.configure do |config|
   config.before(:each) do
 
     # Stub open and close calls
-    dummy_open = ->(ptr, flags, path=nil) do
+    dummy_open = ->(ptr, flags, path = nil) do
       ptr.write_pointer(nil)
       0
     end
