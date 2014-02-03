@@ -1,7 +1,9 @@
 require 'systemd/journal/native'
 require 'systemd/journal/flags'
-require 'systemd/journal/compat'
+require 'systemd/journal/writable'
 require 'systemd/journal/fields'
+require 'systemd/journal/navigation'
+require 'systemd/journal/filtering'
 require 'systemd/journal_error'
 require 'systemd/journal_entry'
 require 'systemd/id128'
@@ -12,11 +14,13 @@ module Systemd
   # Class to allow interacting with the systemd journal.
   # To read from the journal, instantiate a new {Systemd::Journal}; to write to
   # the journal, use
-  # {Systemd::Journal::Compat::ClassMethods#message Journal.message} or
-  # {Systemd::Journal::Compat::ClassMethods#print Journal.print}.
+  # {Systemd::Journal::Writable::ClassMethods#message Journal.message} or
+  # {Systemd::Journal::Writable::ClassMethods#print Journal.print}.
   class Journal
     include Enumerable
-    include Systemd::Journal::Compat
+    include Systemd::Journal::Writable
+    include Systemd::Journal::Navigation
+    include Systemd::Journal::Filtering
 
     # Returns a new instance of a Journal, opened with the provided options.
     # @param [Hash] opts optional initialization parameters.
@@ -58,115 +62,6 @@ module Systemd
 
       seek(:head)
       yield current_entry while move_next
-    end
-
-    # Move the read pointer by `offset` entries.
-    # @param [Integer] offset how many entries to move the read pointer by. If
-    #   this value is positive, the read pointer moves forward.  Otherwise, it
-    #   moves backwards.
-    # @return [Integer] the number of entries the read pointer actually moved.
-    def move(offset)
-      offset > 0 ? move_next_skip(offset) : move_previous_skip(-offset)
-    end
-
-    # Filter the journal at a high level.
-    # Takes any number of arguments; each argument should be a hash representing
-    # a condition to filter based on.  Fields inside the hash will be ANDed
-    # together.  Each hash will be ORed with the others.  Fields in hashes with
-    # Arrays as values are treated as an OR statement, since otherwise they
-    # would never match.
-    # @example
-    #   j = Systemd::Journal.filter(
-    #     {_systemd_unit: 'session-4.scope'},
-    #     {priority: [4, 6]},
-    #     {_exe: '/usr/bin/sshd', priority: 1}
-    #   )
-    #   # equivalent to
-    #   (_systemd_unit == 'session-4.scope') ||
-    #   (priority == 4 || priority == 6)     ||
-    #   (_exe == '/usr/bin/sshd' && priority == 1)
-    def filter(*conditions)
-      clear_filters
-
-      last_index = conditions.length - 1
-
-      conditions.each_with_index do |condition, index|
-        add_filters(condition)
-        add_disjunction unless index == last_index
-      end
-    end
-
-    # Move the read pointer to the next entry in the journal.
-    # @return [Boolean] True if moving to the next entry was successful.
-    # @return [Boolean] False if unable to move to the next entry, indicating
-    #   that the pointer has reached the end of the journal.
-    def move_next
-      rc = Native.sd_journal_next(@ptr)
-      raise JournalError.new(rc) if rc < 0
-      rc > 0
-    end
-
-    # Move the read pointer forward by `amount` entries.
-    # @return [Integer] the actual number of entries by which the read pointer
-    #   moved. If this number is less than the requested amount, the read
-    #   pointer has reached the end of the journal.
-    def move_next_skip(amount)
-      rc = Native.sd_journal_next_skip(@ptr, amount)
-      raise JournalError.new(rc) if rc < 0
-      rc
-    end
-
-    # Move the read pointer to the previous entry in the journal.
-    # @return [Boolean] True if moving to the previous entry was successful.
-    # @return [Boolean] False if unable to move to the previous entry,
-    #   indicating that the pointer has reached the beginning of the journal.
-    def move_previous
-      rc = Native.sd_journal_previous(@ptr)
-      raise JournalError.new(rc) if rc < 0
-      rc > 0
-    end
-
-    # Move the read pointer backwards by `amount` entries.
-    # @return [Integer] the actual number of entries by which the read pointer
-    #   was moved.  If this number is less than the requested amount, the read
-    #   pointer has reached the beginning of the journal.
-    def move_previous_skip(amount)
-      rc = Native.sd_journal_previous_skip(@ptr, amount)
-      raise JournalError.new(rc) if rc < 0
-      rc
-    end
-
-    # Seek to a position in the journal.
-    # Note: after seeking, you must call {#move_next} or {#move_previous}
-    #   before you can call {#read_field} or {#current_entry}.
-    #
-    # @param [Symbol, Time] whence one of :head, :tail, or a Time instance.
-    #   `:head` (or `:start`) will seek to the beginning of the journal.
-    #   `:tail` (or `:end`) will seek to the end of the journal. When a `Time`
-    #   is provided, seek to the journal entry logged closest to that time. When
-    #   a String is provided, assume it is a cursor from {#cursor} and seek to
-    #   that entry.
-    # @return [True]
-    def seek(whence)
-      rc = case whence
-           when :head, :start
-             Native.sd_journal_seek_head(@ptr)
-           when :tail, :end
-             Native.sd_journal_seek_tail(@ptr)
-           else
-             if whence.is_a?(Time)
-               # TODO: is this right? who knows.
-               Native.sd_journal_seek_realtime_usec(@ptr, whence.to_i * 1_000_000)
-             elsif whence.is_a?(String)
-               Native.sd_journal_seek_cursor(@ptr, whence)
-             else
-               raise ArgumentError.new("Unknown seek type: #{whence.class}")
-             end
-           end
-
-      raise JournalErrornew(rc) if rc < 0
-
-      true
     end
 
     # Read the contents of the provided field from the current journal entry.
@@ -275,76 +170,6 @@ module Systemd
           yield current_entry while move_next
         end
       end
-    end
-
-    # Add a filter to journal, such that only entries where the given filter
-    # matches are returned.
-    # {#move_next} or {#move_previous} must be invoked after adding a filter
-    # before attempting to read from the journal.
-    # @param [String] field the column to filter on, e.g. _PID, _EXE.
-    # @param [String] value the match to search for, e.g. '/usr/bin/sshd'
-    # @return [nil]
-    def add_filter(field, value)
-      match = "#{field.to_s.upcase}=#{value}"
-      rc = Native.sd_journal_add_match(@ptr, match, match.length)
-      raise JournalError.new(rc) if rc < 0
-    end
-
-    # Add a set of filters to the journal, such that only entries where the
-    # given filters match are returned.
-    # @param [Hash] filters a set of field/filter value pairs.
-    #   If the filter value is an array, each value in the array is added
-    #   and entries where the specified field matches any of the values is
-    #   returned.
-    # @example Filter by PID and EXE
-    #   j.add_filters(_pid: 6700, _exe: '/usr/bin/sshd')
-    def add_filters(filters)
-      filters.each do |field, value|
-        Array(value).each{ |v| add_filter(field, v) }
-      end
-    end
-
-    # Add an OR condition to the filter.  All previously added matches
-    # will be ORed with the terms following the disjunction.
-    # {#move_next} or {#move_previous} must be invoked after adding a match
-    # before attempting to read from the journal.
-    # @return [nil]
-    # @example Filter entries returned using an OR condition
-    #   j = Systemd::Journal.new
-    #   j.add_filter('PRIORITY', 5)
-    #   j.add_disjunction
-    #   j.add_filter('_EXE', '/usr/bin/sshd')
-    #   while j.move_next
-    #     # current_entry is either an sshd event or
-    #     # has priority 5
-    #   end
-    def add_disjunction
-      rc = Native.sd_journal_add_disjunction(@ptr)
-      raise JournalError.new(rc) if rc < 0
-    end
-
-    # Add an AND condition to the filter.  All previously added terms will be
-    # ANDed together with terms following the conjunction.
-    # {#move_next} or {#move_previous} must be invoked after adding a match
-    # before attempting to read from the journal.
-    # @return [nil]
-    # @example Filter entries returned using an AND condition
-    #   j = Systemd::Journal.new
-    #   j.add_filter('PRIORITY', 5)
-    #   j.add_conjunction
-    #   j.add_filter('_EXE', '/usr/bin/sshd')
-    #   while j.move_next
-    #     # current_entry is an sshd event with priority 5
-    #   end
-    def add_conjunction
-      rc = Native.sd_journal_add_conjunction(@ptr)
-      raise JournalError.new(rc) if rc < 0
-    end
-
-    # Remove all filters and conjunctions/disjunctions.
-    # @return [nil]
-    def clear_filters
-      Native.sd_journal_flush_matches(@ptr)
     end
 
     # Get the number of bytes the Journal is currently using on disk.
