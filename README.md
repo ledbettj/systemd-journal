@@ -9,7 +9,7 @@ Ruby bindings for reading from the systemd journal.
 
 Add this line to your application's Gemfile:
 
-    gem 'systemd-journal', '~> 1.0.0'
+    gem 'systemd-journal', '~> 1.1.0'
 
 And then execute:
 
