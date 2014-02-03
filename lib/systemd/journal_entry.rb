@@ -19,6 +19,11 @@ module Systemd
       end
     end
 
+    # not all journal entries will have all fields.  don't raise an error.
+    def method_missing(m)
+      nil
+    end
+
     # Get the value of a given field in the entry, or nil if it doesn't exist
     def [](key)
       @entry[key] || @entry[key.to_s.upcase]

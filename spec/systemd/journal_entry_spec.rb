@@ -44,6 +44,10 @@ describe Systemd::JournalEntry do
     expect(subject.catalog?).to be_false
   end
 
+  it "doesn't throw NoMethod errors" do
+    expect { subject.froobaz }.not_to raise_error
+  end
+
   context 'with catalogs' do
     subject do
       Systemd::JournalEntry.new(
@@ -61,7 +65,6 @@ describe Systemd::JournalEntry do
     end
 
     describe '#catalog' do
-
       it 'asks the journal for the message with our ID' do
         Systemd::Journal
           .should_receive(:catalog_for)
