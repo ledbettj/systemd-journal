@@ -169,35 +169,19 @@ module Systemd
     # @return [Nil] if the wait time was reached (no events occured).
     # @return [Symbol] :append if new entries were appened to the journal.
     # @return [Symbol] :invalidate if journal files were added/removed/rotated.
-    def wait(timeout_usec = -1)
-      rc = Native.sd_journal_wait(@ptr, timeout_usec)
-      raise JournalError.new(rc) if rc.is_a?(Fixnum) && rc < 0
-      rc == :nop ? nil : rc
+    def wait(timeout_usec = -1, opts = {})
+      if opts[:select]
+        wait_select(timeout_usec)
+      else
+        rc = Native.sd_journal_wait(@ptr, timeout_usec)
+        raise JournalError.new(rc) if rc.is_a?(Fixnum) && rc < 0
+        rc == :nop ? nil : rc
+      end
     end
 
-    # Block until the journal is changed.
-    # This function differs from {#wait} in the following ways:
-    #   * the timeout parameter is defined in seconds, not microseconds.
-    #   * this function can be interrupted and woken prior to completion.
-    # @param timeout_sec [Fixnum] the maximum number of seconds to wait
-    #   or `nil` to wait indefinitely.
-    # @example Wait for an event for a maximum of 3 seconds
-    #   j = Systemd::Journal.new
-    #   j.seek(:tail)
-    #   if j.select(3)
-    #     # event occurred
-    #   end
-    # @return [Nil] if the wait time was reached (no events occured).
-    # @return [Symbol] :append if new entries were appened to the journal.
-    # @return [Symbol] :invalidate if journal files were added/removed/rotated.
-    def wait_select(timeout_sec = nil)
-      r, *_ = IO.select([io_object], [], [], timeout_sec)
-      r ? reason_for_wakeup : nil
-    end
-
-    # Determine if calls to {#select} will reliably wake when a change occurs.
-    # If it returns false, there might be some (unknown) latency involved
-    # between when an change occurs and when {#select} returns.
+    # Determine if calls to {#wait} with `select: true` will reliably wake
+    # when a change occurs. If it returns false, there might be some (unknown)
+    # latency involved  between when an change occurs and when {#wait} returns.
     # @return [Boolean]
     def wait_select_reliable?
       Native.sd_journal_reliable_fd(@ptr) > 0
@@ -295,6 +279,12 @@ module Systemd
 
       len = len_ptr.read_size_t
       string_from_out_ptr(out_ptr, len).split('=', 2)
+    end
+
+    def wait_select(timeout_usec)
+      timeout_sec = (timeout_usec == -1 ? nil : timeout_usec / 1e6)
+      r, *_ = IO.select([io_object], [], [], timeout_sec)
+      r ? reason_for_wakeup : nil
     end
 
     def string_from_out_ptr(p, len)
