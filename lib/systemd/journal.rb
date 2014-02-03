@@ -122,7 +122,7 @@ module Systemd
     def self.catalog_for(message_id)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
 
-      rc = Native.sd_journal_get_scatalog_for_message_id(
+      rc = Native.sd_journal_get_catalog_for_message_id(
         Systemd::Id128::Native::Id128.from_s(message_id),
         out_ptr
       )
