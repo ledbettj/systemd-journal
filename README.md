@@ -62,6 +62,27 @@ Moving around the journal:
     # seek the entry that occured closest to this time
     j.seek(Time.parse("2013-10-31T12:00:00+04:00:00"))
 
+Waiting for things to happen:
+
+    j = Systemd::Journal.new
+    j.seek(:tail)
+    # wait up to one second for something to happen
+    if j.wait(1_000_000)
+      puts 'something changed!'
+    # same as above, but can be interrupted with Control+C.
+    if j.wait(1_000_000, select: true)
+      puts 'something changed!'
+
+Accessing the catalog:
+
+    j = Systemd::Journal.new
+    j.move_next
+    j.move_next while !j.current_entry.catalog?
+
+    puts j.current_entry.catalog
+    # or if you have a message id:
+    puts Systemd::Journal.catalog_for(j.current_entry.message_id)
+
 
 See the documentation for more examples.
 
