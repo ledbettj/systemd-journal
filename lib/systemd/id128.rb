@@ -65,7 +65,7 @@ module Systemd
 
         def self.from_s(str)
           r = Id128.new
-          [str].pack("H*").bytes.each_with_index do |b, i|
+          [str].pack('H*').bytes.each_with_index do |b, i|
             r[:bytes][i] = b
           end
 

@@ -6,3 +6,12 @@ RaiseArgs:
 
 SpaceAroundBlockBraces:
   EnforcedStyle: space_inside_braces
+Lambda:
+  Enabled: false
+
+GlobalVars:
+  AllowedVariables:
+    - $NO_FFI_SPEC
+
+Documentation:
+  Enabled: false

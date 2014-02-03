@@ -113,7 +113,7 @@ module Systemd
     def current_catalog
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
 
-      rc = Native::sd_journal_get_catalog(@ptr, out_ptr)
+      rc = Native.sd_journal_get_catalog(@ptr, out_ptr)
       raise JournalError.new(rc) if rc <  0
 
       Journal.read_and_free_outstr(out_ptr.read_pointer)
@@ -121,8 +121,8 @@ module Systemd
 
     def self.catalog_for(message_id)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
-      
-      rc = Native::sd_journal_get_catalog_for_message_id(
+
+      rc = Native.sd_journal_get_scatalog_for_message_id(
         Systemd::Id128::Native::Id128.from_s(message_id),
         out_ptr
       )
@@ -254,7 +254,7 @@ module Systemd
     private
 
     def self.finalize(ptr)
-      proc{ Native.sd_journal_close(ptr) unless ptr.nil? }
+      proc { Native.sd_journal_close(ptr) unless ptr.nil? }
     end
 
     def enumerate_helper(enum_function)
