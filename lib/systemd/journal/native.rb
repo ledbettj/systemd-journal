@@ -8,7 +8,7 @@ module Systemd
       # rubocop:disable LineLength
       require 'ffi'
       extend FFI::Library
-      ffi_lib %w[libsystemd-journal.so libsystemd-journal.so.0]
+      ffi_lib %w{libsystemd-journal.so.0 libsystemd-journal.so}
 
       # setup/teardown
       attach_function :sd_journal_open,           [:pointer, :int], :int
