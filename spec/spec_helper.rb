@@ -19,7 +19,7 @@ RSpec.configure do |config|
 
     # Raise an exception if any native calls are actually called
     native_calls = Systemd::Journal::Native.methods.select do |m|
-      m.to_s.start_with?("sd_")
+      m.to_s.start_with?('sd_')
     end
 
     native_calls -= [

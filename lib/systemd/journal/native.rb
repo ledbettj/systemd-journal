@@ -3,7 +3,7 @@ require 'systemd/id128'
 module Systemd
   class Journal
     # Provides the FFI bindings to the native `libsystemd-journal` shared
-    #  library.
+    # library.
     module Native
       # rubocop:disable LineLength
       require 'ffi'

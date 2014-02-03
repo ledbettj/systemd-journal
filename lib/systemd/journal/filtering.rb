@@ -2,11 +2,11 @@ module Systemd
   class Journal
     module Filtering
       # Filter the journal at a high level.
-      # Takes any number of arguments; each argument should be a hash representing
-      # a condition to filter based on.  Fields inside the hash will be ANDed
-      # together.  Each hash will be ORed with the others.  Fields in hashes with
-      # Arrays as values are treated as an OR statement, since otherwise they
-      # would never match.
+      # Takes any number of arguments; each argument should be a hash
+      # representing a condition to filter based on.  Fields inside the hash
+      # will be ANDed together.  Each hash will be ORed with the others.
+      # Fields in hashes with Arrays as values are treated as an OR statement,
+      # since otherwise they would never match.
       # @example
       #   j = Systemd::Journal.filter(
       #     {_systemd_unit: 'session-4.scope'},
@@ -27,7 +27,7 @@ module Systemd
           add_disjunction unless index == last_index
         end
       end
-      
+
       # Add a filter to journal, such that only entries where the given filter
       # matches are returned.
       # {#move_next} or {#move_previous} must be invoked after adding a filter
@@ -51,7 +51,7 @@ module Systemd
       #   j.add_filters(_pid: 6700, _exe: '/usr/bin/sshd')
       def add_filters(filters)
         filters.each do |field, value|
-          Array(value).each{ |v| add_filter(field, v) }
+          Array(value).each { |v| add_filter(field, v) }
         end
       end
 
@@ -97,7 +97,6 @@ module Systemd
       def clear_filters
         Native.sd_journal_flush_matches(@ptr)
       end
-
     end
   end
 end
