@@ -1,7 +1,9 @@
 require 'rspec'
 require 'simplecov'
 
-SimpleCov.start
+SimpleCov.start do
+  add_filter '.bundle/'
+end
 require 'systemd/journal'
 
 RSpec.configure do |config|
