@@ -15,10 +15,23 @@ And then execute:
 
     bundle install
 
-Obviously you will need to have [systemd](http://www.freedesktop.org/wiki/Software/systemd/)
-installed on your system in order to use the gem.  The two native library
-dependencies are `libsystemd-journal` and `libsystemd-id128`.
+Or just `gem install systemd-journal` if you're not into that whole bundler
+thing.
 
+## Dependencies
+
+Obviously you will need to have
+[systemd](http://www.freedesktop.org/wiki/Software/systemd/) installed on your
+system in order to use the gem.
+
+__systemd 208__:
+
+* `libsystemd-journal`
+* `libsystemd-id128`
+
+__systemd 209+__:
+
+* `libsystemd`
 
 ## Usage
 
@@ -83,21 +96,23 @@ Accessing the catalog:
     # or if you have a message id:
     puts Systemd::Journal.catalog_for(j.current_entry.message_id)
 
-
 See the documentation for more examples.
 
 ## Issues?
 
-If you run into problems or have questions, please open an
-[Issue](https://github.com/ledbettj/systemd-journal/issues).
+This gem has been tested primarily on Arch Linux running systemd 208.  Please
+let me know if you have issues on other distributions.
 
-## Contributing
+If you run into problems or have questions, please open an
+[Issue](https://github.com/ledbettj/systemd-journal/issues) or Pull Request.
+
+## Pull Requests
 
 1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
 5. Create new Pull Request, targeting the __develop__ branch.
-6. Wipe hands on pants, you're done.
+6. Wipe hands on pants, you're done!
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ledbettj/systemd-journal/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
