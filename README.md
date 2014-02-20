@@ -29,9 +29,8 @@ __systemd 208__:
 * `libsystemd-journal`
 * `libsystemd-id128`
 
-__systemd 209+ (when released)__:
+__systemd 209+__:
 
-* `libsystemd-journal`
 * `libsystemd`
 
 ## Usage
