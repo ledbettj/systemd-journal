@@ -1,3 +1,4 @@
+require 'systemd/journal/version'
 require 'systemd/journal/native'
 require 'systemd/journal/flags'
 require 'systemd/journal/writable'
