@@ -22,16 +22,7 @@ thing.
 
 Obviously you will need to have
 [systemd](http://www.freedesktop.org/wiki/Software/systemd/) installed on your
-system in order to use the gem.
-
-__systemd 208__:
-
-* `libsystemd-journal`
-* `libsystemd-id128`
-
-__systemd 209+__:
-
-* `libsystemd`
+system in order to use the gem.  Currently we support systemd 208 or higher.
 
 ## Usage
 
