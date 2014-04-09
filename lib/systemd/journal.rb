@@ -1,3 +1,4 @@
+require 'systemd/journal/version'
 require 'systemd/journal/native'
 require 'systemd/journal/flags'
 require 'systemd/journal/writable'
@@ -29,9 +30,14 @@ module Systemd
     # @option opts [Integer] :flags a set of bitwise OR-ed
     #   {Systemd::Journal::Flags} which control what journal files are opened.
     #   Defaults to `0`, meaning all journals avaiable to the current user.
-    # @option opts [String]  :path if provided, open the journal files living
-    #   in the provided directory only.  Any provided flags will be ignored per
+    # @option opts [String] :path if provided, open the journal files living
+    #   in the provided directory only.  Any provided flags will be ignored
     #   since sd_journal_open_directory does not currently accept any flags.
+    # @option opts [Array] :files if provided, open the provided journal files
+    #   only.  Any provided flags will be ignored since sd_journal_open_files
+    #   does not currently accept any flags.
+    # @option opts [String] :container if provided, open the journal files from
+    #   the container with the provided machine name only.
     # @example Read only system journal entries
     #   j = Systemd::Journal.new(flags: Systemd::Journal::Flags::SYSTEM_ONLY)
     # @example Directly open a journal directory
@@ -39,12 +45,18 @@ module Systemd
     #     path: '/var/log/journal/5f5777e46c5f4131bd9b71cbed6b9abf'
     #   )
     def initialize(opts = {})
+      validate_options!(opts)
+
       flags = opts[:flags] || 0
-      path  = opts[:path]
       ptr   = FFI::MemoryPointer.new(:pointer, 1)
 
-      rc = if path
-             Native.sd_journal_open_directory(ptr, path, 0)
+      rc = case
+           when opts[:path]
+             Native.sd_journal_open_directory(ptr, opts[:path], 0)
+           when opts[:files]
+             Native.sd_journal_open_files(ptr, array_to_ptrs(opts[:files]), 0)
+           when opts[:container]
+             Native.sd_journal_open_container(ptr, opts[:container], flags)
            else
              Native.sd_journal_open(ptr, flags)
            end
@@ -193,6 +205,23 @@ module Systemd
     end
 
     private
+
+    def array_to_ptrs(strings)
+      ptr = FFI::MemoryPointer.new(:pointer, strings.length + 1)
+      strings.each_with_index do |s, i|
+        ptr[i].put_pointer(0, FFI::MemoryPointer.from_string(s))
+      end
+      ptr[strings.length].put_pointer(0, nil)
+      ptr
+    end
+
+    def validate_options!(opts)
+      exclusive = [:path, :files, :container]
+      provided  = (opts.keys & exclusive)
+      if provided.length > 1
+        raise ArgumentError.new("#{provided} are conflicting options")
+      end
+    end
 
     def self.finalize(ptr)
       proc { Native.sd_journal_close(ptr) unless ptr.nil? }

@@ -22,16 +22,7 @@ thing.
 
 Obviously you will need to have
 [systemd](http://www.freedesktop.org/wiki/Software/systemd/) installed on your
-system in order to use the gem.
-
-__systemd 208__:
-
-* `libsystemd-journal`
-* `libsystemd-id128`
-
-__systemd 209+__:
-
-* `libsystemd`
+system in order to use the gem.  Currently we support systemd 208 or higher.
 
 ## Usage
 
@@ -114,5 +105,3 @@ If you run into problems or have questions, please open an
 4. Push to the branch
 5. Create new Pull Request, targeting the __develop__ branch.
 6. Wipe hands on pants, you're done!
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ledbettj/systemd-journal/trend.png)](https://bitdeli.com/free "Bitdeli Badge")

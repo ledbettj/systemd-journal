@@ -16,9 +16,28 @@ describe Systemd::Journal do
       Systemd::Journal.new(flags: 1234)
     end
 
+    it 'accepts a files argument to open specific files' do
+      Systemd::Journal::Native.should_receive(:sd_journal_open_files)
+      Systemd::Journal.new(files: ['/path/to/journal/1', '/path/to/journal/2'])
+    end
+
+    it 'accepts a machine name to open a container' do
+      Systemd::Journal::Native.should_receive(:sd_journal_open_container)
+      Systemd::Journal.new(container: 'bobs-machine')
+    end
+
     it 'raises a Journal Error if a native call fails' do
       Systemd::Journal::Native.should_receive(:sd_journal_open).and_return(-1)
       expect { Systemd::Journal.new }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'raises an argument error if conflicting options are passed' do
+      expect do
+        Systemd::Journal.new(path: 'p', files: %w{a b})
+      end.to raise_error(ArgumentError)
+      expect do
+        Systemd::Journal.new(container: 'c', files: %w{a b})
+      end.to raise_error(ArgumentError)
     end
   end
 

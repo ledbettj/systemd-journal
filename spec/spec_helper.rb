@@ -15,8 +15,9 @@ RSpec.configure do |config|
       0
     end
 
-    Systemd::Journal::Native.stub(:sd_journal_open, &dummy_open)
-    Systemd::Journal::Native.stub(:sd_journal_open_directory, &dummy_open)
+    ['', '_directory', '_files', '_container'].each do |suffix|
+      Systemd::Journal::Native.stub(:"sd_journal_open#{suffix}", &dummy_open)
+    end
     Systemd::Journal::Native.stub(:sd_journal_close).and_return(0)
 
     # Raise an exception if any native calls are actually called
@@ -25,7 +26,8 @@ RSpec.configure do |config|
     end
 
     native_calls -= [
-      :sd_journal_open, :sd_journal_open_directory, :sd_journal_close
+      :sd_journal_open, :sd_journal_open_directory, :sd_journal_close,
+      :sd_journal_open_files, :sd_journal_open_container
     ]
 
     build_err_proc = ->(method_name) do
