@@ -1,0 +1,24 @@
+language: ruby
+rvm:
+  - 2.1.2
+  - 1.9.3
+before_script:
+  - export PREV_DIR=$(pwd)
+  - sudo apt-get update -qq
+  - sudo apt-get install autotools-dev automake autoconf libtool libdbus-1-dev libcap-dev libblkid-dev libpam-dev libcryptsetup-dev libaudit-dev libacl1-dev libattr1-dev libselinux-dev liblzma-dev libgcrypt-dev libqrencode-dev libmicrohttpd-dev gtk-doc-tools gperf python2.7-dev
+  - git clone git://github.com/systemd/systemd.git /tmp/systemd
+  - >
+      cd /tmp/systemd/  &&
+      git checkout v209 &&
+      sh autogen.sh     &&
+      ./configure --disable-apparmor --disable-audit --disable-selinux
+      --disable-machined --disable-logind --disable-timedated
+      --disable-timesyncd --disable-localed --disable-resolved
+      --disable-networkd --disable-tests --disable-coredump --disable-hostnamed
+      --disable-manpages --disable-libcryptsetup --disable-python-devel
+      --prefix=/tmp/systemd-install/usr
+  - cd /tmp/systemd/ && make && sudo make install
+  - echo "done building in $(pwd), switching back to $PREV_DIR, library path is $LD_LIBRARY_PATH"
+  - cd $PREV_DIR
+env:
+  - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/tmp/systemd-install/usr/lib
