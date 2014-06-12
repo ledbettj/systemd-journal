@@ -8,7 +8,7 @@ task :console do
   exec 'pry -I./lib -r systemd/journal'
 end
 
-Rubocop::RakeTask.new(:rubocop) do |task|
+RuboCop::RakeTask.new(:rubocop) do |task|
   task.patterns = ['lib/**/*.rb', 'spec/**/*.rb']
   task.fail_on_error = false
 end
