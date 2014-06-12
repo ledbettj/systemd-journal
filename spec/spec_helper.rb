@@ -10,15 +10,15 @@ RSpec.configure do |config|
   config.before(:each) do
 
     # Stub open and close calls
-    dummy_open = ->(ptr, flags, path = nil) do
+    dummy_open = ->(ptr, _flags, _path = nil) do
       ptr.write_pointer(nil)
       0
     end
 
     ['', '_directory', '_files', '_container'].each do |suffix|
-      Systemd::Journal::Native.stub(:"sd_journal_open#{suffix}", &dummy_open)
+      allow(Systemd::Journal::Native).to receive(:"sd_journal_open#{suffix}", &dummy_open)
     end
-    Systemd::Journal::Native.stub(:sd_journal_close).and_return(0)
+    allow(Systemd::Journal::Native).to receive(:sd_journal_close).and_return(0)
 
     # Raise an exception if any native calls are actually called
     native_calls = Systemd::Journal::Native.methods.select do |m|
@@ -37,7 +37,7 @@ RSpec.configure do |config|
     end
 
     native_calls.each do |meth|
-      Systemd::Journal::Native.stub(meth, &build_err_proc.call(meth))
+      allow(Systemd::Journal::Native).to receive(meth, &build_err_proc.call(meth))
     end
   end
 end

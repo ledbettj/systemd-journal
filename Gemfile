@@ -6,4 +6,4 @@ gemspec
 gem 'pry'
 gem 'rake'
 gem 'yard'
-gem 'rubocop', require: false
+gem 'rubocop', '~>0.23.0', require: false

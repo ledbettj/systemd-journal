@@ -4,39 +4,42 @@ describe Systemd::Journal do
 
   describe '#initialize' do
     it 'opens a directory if a path is passed' do
-      Systemd::Journal::Native.should_receive(:sd_journal_open_directory)
-      Systemd::Journal::Native.should_not_receive(:sd_journal_open)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_open_directory)
+      expect(Systemd::Journal::Native).to_not receive(:sd_journal_open)
+
       Systemd::Journal.new(path: '/path/to/journal')
     end
 
     it 'accepts flags as an argument' do
-      Systemd::Journal::Native.should_receive(:sd_journal_open)
-        .with(anything, 1234)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_open).with(
+        anything,
+        1234
+      )
 
       Systemd::Journal.new(flags: 1234)
     end
 
     it 'accepts a files argument to open specific files' do
-      Systemd::Journal::Native.should_receive(:sd_journal_open_files)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_open_files)
       Systemd::Journal.new(files: ['/path/to/journal/1', '/path/to/journal/2'])
     end
 
     it 'accepts a machine name to open a container' do
-      Systemd::Journal::Native.should_receive(:sd_journal_open_container)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_open_container)
       Systemd::Journal.new(container: 'bobs-machine')
     end
 
     it 'raises a Journal Error if a native call fails' do
-      Systemd::Journal::Native.should_receive(:sd_journal_open).and_return(-1)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_open).and_return(-1)
       expect { Systemd::Journal.new }.to raise_error(Systemd::JournalError)
     end
 
     it 'raises an argument error if conflicting options are passed' do
       expect do
-        Systemd::Journal.new(path: 'p', files: %w{a b})
+        Systemd::Journal.new(path: 'p', files: %w(a b))
       end.to raise_error(ArgumentError)
       expect do
-        Systemd::Journal.new(container: 'c', files: %w{a b})
+        Systemd::Journal.new(container: 'c', files: %w(a b))
       end.to raise_error(ArgumentError)
     end
   end
@@ -44,41 +47,38 @@ describe Systemd::Journal do
   describe '#move' do
     it 'calls move_next_skip if the value is positive' do
       j = Systemd::Journal.new
-      j.should_receive(:move_next_skip).with(5)
+      expect(j).to receive(:move_next_skip).with(5)
       j.move(5)
     end
 
     it 'calls move_next_previous otherwise' do
       j = Systemd::Journal.new
-      j.should_receive(:move_previous_skip).with(5)
+      expect(j).to receive(:move_previous_skip).with(5)
       j.move(-5)
     end
   end
 
-  %w{next previous}.each do |direction|
+  %w(next previous).each do |direction|
     describe "#move_#{direction}" do
       it 'returns true on a successful move' do
         j = Systemd::Journal.new
-        Systemd::Journal::Native
-          .should_receive(:"sd_journal_#{direction}")
+        expect(Systemd::Journal::Native).to receive(:"sd_journal_#{direction}")
           .and_return(1)
 
-        j.send(:"move_#{direction}").should eq(true)
+        expect(j.send(:"move_#{direction}")).to be true
       end
 
       it 'returns false on EOF' do
         j = Systemd::Journal.new
-        Systemd::Journal::Native
-          .should_receive(:"sd_journal_#{direction}")
+        expect(Systemd::Journal::Native).to receive(:"sd_journal_#{direction}")
           .and_return(0)
 
-        j.send(:"move_#{direction}").should eq(false)
+        expect(j.send(:"move_#{direction}")).to be false
       end
 
       it 'raises an exception on failure' do
         j = Systemd::Journal.new
-        Systemd::Journal::Native
-          .should_receive(:"sd_journal_#{direction}")
+        expect(Systemd::Journal::Native).to receive(:"sd_journal_#{direction}")
           .and_return(-1)
 
         expect do
@@ -89,17 +89,15 @@ describe Systemd::Journal do
 
     describe "#move_#{direction}_skip" do
       it 'returns the number of records moved by' do
-        Systemd::Journal::Native
-          .should_receive(:"sd_journal_#{direction}_skip")
+        expect(Systemd::Journal::Native).to receive(:"sd_journal_#{direction}_skip")
           .with(anything, 10)
           .and_return(10)
 
-        Systemd::Journal.new.send(:"move_#{direction}_skip", 10).should eq(10)
+        expect(Systemd::Journal.new.send(:"move_#{direction}_skip", 10)).to eq(10)
       end
 
       it 'raises an exception on failure' do
-        Systemd::Journal::Native
-          .should_receive(:"sd_journal_#{direction}_skip")
+        expect(Systemd::Journal::Native).to receive(:"sd_journal_#{direction}_skip")
           .with(anything, 10)
           .and_return(-1)
 
@@ -115,14 +113,14 @@ describe Systemd::Journal do
   describe '#each' do
     it 'should reposition to the head of the journal' do
       j = Systemd::Journal.new
-      j.should_receive(:seek).with(:head).and_return(0)
-      j.stub(:move_next).and_return(nil)
-      j.each { |e| nil }
+      expect(j).to receive(:seek).with(:head).and_return(0)
+      allow(j).to receive(:move_next).and_return(nil)
+      j.each { nil }
     end
 
     it 'should return an enumerator if no block is given' do
       j = Systemd::Journal.new
-      j.each.class.should eq(Enumerator)
+      expect(j.each.class).to eq(Enumerator)
     end
 
     it 'should return each entry in the journal' do
@@ -130,11 +128,11 @@ describe Systemd::Journal do
       entry   = nil
 
       j = Systemd::Journal.new
-      j.stub(:seek).and_return(0)
-      j.stub(:current_entry) { entry }
-      j.stub(:move_next)     { entry = entries.shift }
+      allow(j).to receive(:seek).and_return(0)
+      allow(j).to receive(:current_entry) { entry }
+      allow(j).to receive(:move_next)     { entry = entries.shift }
 
-      j.map { |e| e['_PID'] }.should eq([1, 2])
+      expect(j.map { |e| e['_PID'] }).to eq([1, 2])
     end
 
   end
@@ -142,36 +140,32 @@ describe Systemd::Journal do
   describe '#seek' do
     it 'moves to the first entry of the file' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_seek_head)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_seek_head)
         .and_return(0)
 
-      j.seek(:head).should eq(true)
+      expect(j.seek(:head)).to be true
     end
 
     it 'moves to the last entry of the file' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_seek_tail)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_seek_tail)
         .and_return(0)
 
-      j.seek(:tail).should eq(true)
+      expect(j.seek(:tail)).to be true
     end
 
     it 'seeks based on time when a time is provided' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_seek_realtime_usec)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_seek_realtime_usec)
         .and_return(0)
 
-      j.seek(Time.now).should eq(true)
+      expect(j.seek(Time.now)).to be true
     end
 
     it 'seeks based on a cursor when a string is provided' do
       j = Systemd::Journal.new
 
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_seek_cursor)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_seek_cursor)
         .with(anything, '123')
         .and_return(0)
 
@@ -187,8 +181,7 @@ describe Systemd::Journal do
   describe '#read_field' do
     it 'raises an exception if the call fails' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_get_data)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_get_data)
         .and_return(-1)
 
       expect { j.read_field(:message) }.to raise_error(Systemd::JournalError)
@@ -196,29 +189,26 @@ describe Systemd::Journal do
 
     it 'parses the returned value correctly.' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_get_data) do |ptr, field, out_ptr, len_ptr|
+      expect(Systemd::Journal::Native).to receive(:sd_journal_get_data) do |_, _, out_ptr, len_ptr|
           dummy = 'MESSAGE=hello world'
           out_ptr.write_pointer(FFI::MemoryPointer.from_string(dummy))
           len_ptr.write_size_t(dummy.size)
           0
         end
 
-      j.read_field(:message).should eq('hello world')
+      expect(j.read_field(:message)).to eq('hello world')
     end
   end
 
   describe '#current_entry' do
     before(:each) do
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_restart_data)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_restart_data)
         .and_return(nil)
     end
 
     it 'raises an exception if the call fails' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_enumerate_data)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_enumerate_data)
         .and_return(-1)
 
       expect { j.current_entry }.to raise_error(Systemd::JournalError)
@@ -228,9 +218,8 @@ describe Systemd::Journal do
       j = Systemd::Journal.new
       results = ['_PID=100', 'MESSAGE=hello world']
 
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_enumerate_data)
-        .exactly(3).times do |ptr, out_ptr, len_ptr|
+      expect(Systemd::Journal::Native).to receive(:sd_journal_enumerate_data)
+        .exactly(3).times do |_, out_ptr, len_ptr|
           if results.any?
             x = results.shift
             out_ptr.write_pointer(FFI::MemoryPointer.from_string(x))
@@ -243,22 +232,20 @@ describe Systemd::Journal do
 
       entry = j.current_entry
 
-      entry._pid.should     eq('100')
-      entry.message.should eq('hello world')
+      expect(entry._pid).to    eq('100')
+      expect(entry.message).to eq('hello world')
     end
   end
 
   describe '#query_unique' do
     before(:each) do
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_restart_unique)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_restart_unique)
         .and_return(nil)
     end
 
     it 'raises an exception if the call fails' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_query_unique)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_query_unique)
         .and_return(-1)
 
       expect { j.query_unique(:_pid) }.to raise_error(Systemd::JournalError)
@@ -266,12 +253,10 @@ describe Systemd::Journal do
 
     it 'raises an exception if the call fails (2)' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_query_unique)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_query_unique)
         .and_return(0)
 
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_enumerate_unique)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_enumerate_unique)
         .and_return(-1)
 
       expect { j.query_unique(:_pid) }.to raise_error(Systemd::JournalError)
@@ -281,13 +266,11 @@ describe Systemd::Journal do
       j = Systemd::Journal.new
       results = ['_PID=100', '_PID=200', '_PID=300']
 
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_query_unique)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_query_unique)
         .and_return(0)
 
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_enumerate_unique)
-        .exactly(4).times do |ptr, out_ptr, len_ptr|
+      expect(Systemd::Journal::Native).to receive(:sd_journal_enumerate_unique)
+        .exactly(4).times do |_, out_ptr, len_ptr|
           if results.any?
             x = results.shift
             out_ptr.write_pointer(FFI::MemoryPointer.from_string(x))
@@ -298,14 +281,14 @@ describe Systemd::Journal do
           end
         end
 
-      j.query_unique(:_pid).should eq(%w{100 200 300})
+      expect(j.query_unique(:_pid)).to eq(%w(100 200 300))
     end
 
   end
 
   describe '#wait' do
     it 'raises an exception if the call fails' do
-      Systemd::Journal::Native.should_receive(:sd_journal_wait).and_return(-1)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_wait).and_return(-1)
 
       j = Systemd::Journal.new
       expect { j.wait(100) }.to raise_error(Systemd::JournalError)
@@ -313,28 +296,25 @@ describe Systemd::Journal do
 
     it 'returns the reason we were woken up' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_wait)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_wait)
         .and_return(:append)
 
-      j.wait(100).should eq(:append)
+      expect(j.wait(100)).to eq(:append)
     end
 
     it 'returns nil if we reached the timeout.' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_wait)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_wait)
         .and_return(:nop)
 
-      j.wait(100).should eq(nil)
+      expect(j.wait(100)).to be nil
     end
   end
 
   describe '#add_filter' do
     it 'raises an exception if the call fails' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_add_match)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_add_match)
         .and_return(-1)
 
       expect do
@@ -343,8 +323,7 @@ describe Systemd::Journal do
     end
 
     it 'formats the arguments appropriately' do
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_add_match)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_add_match)
         .with(anything, 'MESSAGE=test', 'MESSAGE=test'.length)
         .and_return(0)
 
@@ -355,17 +334,17 @@ describe Systemd::Journal do
   describe '#add_filters' do
     it 'calls add_filter for each parameter' do
       j = Systemd::Journal.new
-      j.should_receive(:add_filter).with(:priority, 1)
-      j.should_receive(:add_filter).with(:_exe, '/usr/bin/sshd')
+      expect(j).to receive(:add_filter).with(:priority, 1)
+      expect(j).to receive(:add_filter).with(:_exe, '/usr/bin/sshd')
 
       j.add_filters(priority: 1, _exe: '/usr/bin/sshd')
     end
 
     it 'expands array arguments to multiple add_filter calls' do
       j = Systemd::Journal.new
-      j.should_receive(:add_filter).with(:priority, 1)
-      j.should_receive(:add_filter).with(:priority, 2)
-      j.should_receive(:add_filter).with(:priority, 3)
+      expect(j).to receive(:add_filter).with(:priority, 1)
+      expect(j).to receive(:add_filter).with(:priority, 2)
+      expect(j).to receive(:add_filter).with(:priority, 3)
 
       j.add_filters(priority: [1, 2, 3])
     end
@@ -374,18 +353,18 @@ describe Systemd::Journal do
   describe '#filter' do
     it 'clears the existing filters' do
       j = Systemd::Journal.new
-      j.should_receive(:clear_filters)
+      expect(j).to receive(:clear_filters)
 
       j.filter({})
     end
 
     it 'adds disjunctions between terms' do
       j = Systemd::Journal.new
-      j.stub(:clear_filters).and_return(nil)
+      allow(j).to receive(:clear_filters).and_return(nil)
 
-      j.should_receive(:add_filter).with(:priority, 1).ordered
-      j.should_receive(:add_disjunction).ordered
-      j.should_receive(:add_filter).with(:message, 'hello').ordered
+      expect(j).to receive(:add_filter).with(:priority, 1).ordered
+      expect(j).to receive(:add_disjunction).ordered
+      expect(j).to receive(:add_filter).with(:message, 'hello').ordered
 
       j.filter({ priority: 1 }, { message: 'hello' })
 
@@ -395,8 +374,7 @@ describe Systemd::Journal do
   describe '#add_conjunction' do
     it 'raises an exception if the call fails' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_add_conjunction)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_add_conjunction)
         .and_return(-1)
 
       expect { j.add_conjunction }.to raise_error(Systemd::JournalError)
@@ -406,8 +384,7 @@ describe Systemd::Journal do
   describe '#add_disjunction' do
     it 'raises an exception if the call fails' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_add_disjunction)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_add_disjunction)
         .and_return(-1)
 
       expect { j.add_disjunction }.to raise_error(Systemd::JournalError)
@@ -417,8 +394,7 @@ describe Systemd::Journal do
   describe '#clear_filters' do
     it 'flushes the matches' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_flush_matches)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_flush_matches)
         .and_return(nil)
 
       j.clear_filters
@@ -428,19 +404,17 @@ describe Systemd::Journal do
   describe '#disk_usage' do
     it 'returns the size used on disk' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_get_usage) do |ptr, size_ptr|
+      expect(Systemd::Journal::Native).to receive(:sd_journal_get_usage) do |_, size_ptr|
           size_ptr.write_size_t(12)
           0
         end
 
-      j.disk_usage.should eq(12)
+      expect(j.disk_usage).to eq(12)
     end
 
     it 'raises an error if the call fails' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_get_usage)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_get_usage)
         .and_return(-1)
 
       expect { j.disk_usage }.to raise_error(Systemd::JournalError)
@@ -450,8 +424,7 @@ describe Systemd::Journal do
   describe '#data_threshold=' do
     it 'sets the data threshold' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_set_data_threshold)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_set_data_threshold)
         .with(anything, 0x1234)
         .and_return(0)
 
@@ -460,8 +433,7 @@ describe Systemd::Journal do
 
     it 'raises a JournalError on failure' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_set_data_threshold)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_set_data_threshold)
         .with(anything, 0x1234)
         .and_return(-1)
 
@@ -474,19 +446,17 @@ describe Systemd::Journal do
   describe '#data_threshold' do
     it 'gets the data threshold' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_get_data_threshold) do |ptr, size_ptr|
+      expect(Systemd::Journal::Native).to receive(:sd_journal_get_data_threshold) do |_, size_ptr|
           size_ptr.write_size_t(0x1234)
           0
         end
 
-      j.data_threshold.should eq(0x1234)
+      expect(j.data_threshold).to eq(0x1234)
     end
 
     it 'raises a JournalError on failure' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_get_data_threshold)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_get_data_threshold)
         .and_return(-3)
 
       expect { j.data_threshold }.to raise_error(Systemd::JournalError)
@@ -497,27 +467,24 @@ describe Systemd::Journal do
   describe '#cursor?' do
     it 'returns true if the current cursor is the provided value' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_test_cursor)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_test_cursor)
         .with(anything, '1234').and_return(1)
 
-      j.cursor?('1234').should eq(true)
+      expect(j.cursor?('1234')).to be true
     end
 
     it 'returns false otherwise' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_test_cursor)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_test_cursor)
         .with(anything, '1234')
         .and_return(0)
 
-      j.cursor?('1234').should eq(false)
+      expect(j.cursor?('1234')).to be false
     end
 
     it 'raises a JournalError on failure' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_test_cursor)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_test_cursor)
         .and_return(-3)
 
       expect { j.cursor?('123') }.to raise_error(Systemd::JournalError)
@@ -528,8 +495,7 @@ describe Systemd::Journal do
   describe '#cursor' do
     it 'returns the current cursor' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_get_cursor) do |ptr, out_ptr|
+      expect(Systemd::Journal::Native).to receive(:sd_journal_get_cursor) do |_, out_ptr|
           # this memory will be manually freed. not setting autorelease to
           # false would cause a double free.
           str = FFI::MemoryPointer.from_string('5678')
@@ -539,13 +505,12 @@ describe Systemd::Journal do
           0
         end
 
-      j.cursor.should eq('5678')
+      expect(j.cursor).to eq('5678')
     end
 
     it 'raises a JournalError on failure' do
       j = Systemd::Journal.new
-      Systemd::Journal::Native
-        .should_receive(:sd_journal_get_cursor)
+      expect(Systemd::Journal::Native).to receive(:sd_journal_get_cursor)
         .and_return(-3)
 
       expect { j.cursor }.to raise_error(Systemd::JournalError)

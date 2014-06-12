@@ -41,7 +41,7 @@ describe Systemd::JournalEntry do
   end
 
   it 'should not have a catalog' do
-    expect(subject.catalog?).to be_false
+    expect(subject.catalog?).to be false
   end
 
   it "doesn't throw NoMethod errors" do
@@ -60,14 +60,13 @@ describe Systemd::JournalEntry do
 
     describe '#catalog?' do
       it 'returns true if the entry has a message ID' do
-        expect(subject.catalog?).to be_true
+        expect(subject.catalog?).to be true
       end
     end
 
     describe '#catalog' do
       it 'asks the journal for the message with our ID' do
-        Systemd::Journal
-          .should_receive(:catalog_for)
+        expect(Systemd::Journal).to receive(:catalog_for)
           .with('ab1fced28a0')
           .and_return('catalog')
 
@@ -75,8 +74,7 @@ describe Systemd::JournalEntry do
       end
 
       it 'does field replacement by default' do
-        Systemd::Journal
-          .should_receive(:catalog_for)
+        expect(Systemd::Journal).to receive(:catalog_for)
           .with('ab1fced28a0')
           .and_return('catalog @_PID@ @PRIORITY@')
 
@@ -84,8 +82,7 @@ describe Systemd::JournalEntry do
       end
 
       it 'skips field replacement if requested' do
-        Systemd::Journal
-          .should_receive(:catalog_for)
+        expect(Systemd::Journal).to receive(:catalog_for)
           .with('ab1fced28a0')
           .and_return('cat @_PID@ @PRIORITY@')
 
