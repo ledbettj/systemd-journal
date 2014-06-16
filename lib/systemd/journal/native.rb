@@ -68,7 +68,7 @@ module Systemd
       # misc
       attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
     end
-  end unless $NO_FFI_SPEC
+  end
 
   # @private
   module LibC

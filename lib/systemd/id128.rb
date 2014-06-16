@@ -43,16 +43,14 @@ module Systemd
 
     # providing bindings to the systemd-id128 library.
     module Native
-      unless $NO_FFI_SPEC
-        require 'ffi'
-        extend FFI::Library
-        ffi_lib %w{ libsystemd.so.0       libsystemd.so
-                    libsystemd-id128.so.0 libsystemd-id128.so }
+      require 'ffi'
+      extend FFI::Library
+      ffi_lib %w{ libsystemd.so.0       libsystemd.so
+                  libsystemd-id128.so.0 libsystemd-id128.so }
 
-        attach_function :sd_id128_get_machine, [:pointer], :int
-        attach_function :sd_id128_get_boot,    [:pointer], :int
-        attach_function :sd_id128_randomize,   [:pointer], :int
-      end
+      attach_function :sd_id128_get_machine, [:pointer], :int
+      attach_function :sd_id128_get_boot,    [:pointer], :int
+      attach_function :sd_id128_randomize,   [:pointer], :int
 
       # @private
       class Id128 < FFI::Union
