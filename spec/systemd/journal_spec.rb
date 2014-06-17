@@ -119,22 +119,42 @@ RSpec.describe Systemd::Journal do
     end
   end
 
-  describe 'catalog_for' do
-    subject(:j)        { Systemd::Journal }
+  context 'with catalog messages' do
     let(:message_id)   { 'f77379a8490b408bbe5f6940505a777b' }
     let(:message_text) { 'Subject: The Journal has been started' }
 
-    it 'throws a JournalError on invalid return code' do
-      expect(Systemd::Journal::Native)
-        .to receive(:sd_journal_get_catalog_for_message_id)
-        .and_return(-1)
+    describe 'catalog_for' do
+      subject(:j) { Systemd::Journal }
 
-      expect { j.catalog_for(message_id) }.to raise_error(Systemd::JournalError)
+      it 'throws a JournalError on invalid return code' do
+        expect(Systemd::Journal::Native)
+          .to receive(:sd_journal_get_catalog_for_message_id)
+          .and_return(-1)
+
+        expect { j.catalog_for(message_id) }.to raise_error(Systemd::JournalError)
+      end
+
+      it 'returns the correct catalog entry' do
+        cat = Systemd::Journal.catalog_for(message_id)
+        expect(cat).to start_with(message_text)
+      end
     end
 
-    it 'returns the correct catalog entry' do
-      cat = Systemd::Journal.catalog_for(message_id)
-      expect(cat).to start_with(message_text)
+    describe 'current_catalog' do
+      it 'throws a JournalError on invalid return code' do
+        expect(Systemd::Journal::Native)
+          .to receive(:sd_journal_get_catalog)
+          .and_return(-1)
+
+        expect { j.current_catalog }.to raise_error(Systemd::JournalError)
+      end
+
+      it 'returns the correct catalog entry' do
+        # find first entry with a catalog
+        j.move_next while !j.current_entry.catalog?
+
+        expect(j.current_catalog).to start_with(message_text)
+      end
     end
   end
 
