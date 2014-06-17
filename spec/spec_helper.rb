@@ -1,5 +1,24 @@
 require 'rspec'
+require 'json'
 require 'simplecov'
+
+module SpecHelper
+  def fixture_dir
+    @path ||= File.join(File.expand_path(__dir__), 'fixtures')
+  end
+
+  def journal_file
+    @file ||= File.join(fixture_dir, 'test.journal')
+  end
+
+  def journal_json
+    @json ||= JSON.parse(File.read(File.join(fixture_dir, 'test.json')))
+  end
+
+  def entry_field(index, name)
+    journal_json[index][name.to_s.upcase]
+  end
+end
 
 SimpleCov.start do
   add_filter '.bundle/'
@@ -7,37 +26,7 @@ end
 require 'systemd/journal'
 
 RSpec.configure do |config|
-  config.before(:each) do
 
-    # Stub open and close calls
-    dummy_open = ->(ptr, flags, path = nil) do
-      ptr.write_pointer(nil)
-      0
-    end
-
-    ['', '_directory', '_files', '_container'].each do |suffix|
-      Systemd::Journal::Native.stub(:"sd_journal_open#{suffix}", &dummy_open)
-    end
-    Systemd::Journal::Native.stub(:sd_journal_close).and_return(0)
-
-    # Raise an exception if any native calls are actually called
-    native_calls = Systemd::Journal::Native.methods.select do |m|
-      m.to_s.start_with?('sd_')
-    end
-
-    native_calls -= [
-      :sd_journal_open, :sd_journal_open_directory, :sd_journal_close,
-      :sd_journal_open_files, :sd_journal_open_container
-    ]
-
-    build_err_proc = ->(method_name) do
-      return ->(*params) do
-        raise RuntimeError.new("#{method_name} called without being stubbed.")
-      end
-    end
-
-    native_calls.each do |meth|
-      Systemd::Journal::Native.stub(meth, &build_err_proc.call(meth))
-    end
-  end
+  config.disable_monkey_patching!
+  config.include SpecHelper
 end
