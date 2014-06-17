@@ -103,7 +103,7 @@ module Systemd
                raise ArgumentError.new("Unknown seek type: #{where.class}")
              end
 
-        raise JournalErrornew(rc) if rc < 0
+        raise JournalError.new(rc) if rc < 0
 
         true
       end

@@ -151,11 +151,6 @@ module Systemd
     # @example Fetch all possible boot ids from the journal
     #   j = Systemd::Journal.new
     #   j.query_unique('_BOOT_ID')
-    # @example Enumerate machine IDs with a block
-    #   j = Systemd::Journal.new
-    #   j.query_unique('_MACHINE_ID') do |machine_id|
-    #     puts "found machine id #{machine_id}"
-    #   end
     def query_unique(field)
       results = []
 
