@@ -8,6 +8,16 @@ RSpec.describe Systemd::Journal do
     end
   end
 
+  describe 'initialize' do
+    subject(:j) { Systemd::Journal }
+
+    it 'detects invalid argument combinations' do
+      expect { j.new(path: '/',     files: []) }.to raise_error(ArgumentError)
+      expect { j.new(container: '', files: []) }.to raise_error(ArgumentError)
+      expect { j.new(container: '', path: '/') }.to raise_error(ArgumentError)
+    end
+  end
+
   describe 'query_unique' do
     it 'throws a JournalError on invalid return code' do
       expect(Systemd::Journal::Native).to receive(:sd_journal_enumerate_unique)
@@ -84,7 +94,46 @@ RSpec.describe Systemd::Journal do
     it 'returns a JournalEntry with the correct values' do
       entry = j.current_entry
       expect(entry._hostname).to eq('arch')
-      expect(entry.message).to   start_with('Allowing runtime journal files')
+      expect(entry.message).to   start_with('Allowing runtime journal')
+    end
+  end
+
+  describe 'each' do
+    it 'returns an enumerator' do
+      expect(j.each.class).to be Enumerator
+    end
+
+    it 'throws a JournalError on invalid return code' do
+      expect(Systemd::Journal::Native).to receive(:sd_journal_seek_head)
+        .and_return(-1)
+
+      expect { j.each }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'properly enumerates all the entries' do
+      entries = j.each.map(&:message)
+
+      expect(entries.first).to start_with('Allowing runtime journal')
+      expect(entries.last).to  start_with('ROOT LOGIN ON tty1')
+    end
+  end
+
+  describe 'catalog_for' do
+    subject(:j)        { Systemd::Journal }
+    let(:message_id)   { 'f77379a8490b408bbe5f6940505a777b' }
+    let(:message_text) { 'Subject: The Journal has been started' }
+
+    it 'throws a JournalError on invalid return code' do
+      expect(Systemd::Journal::Native)
+        .to receive(:sd_journal_get_catalog_for_message_id)
+        .and_return(-1)
+
+      expect { j.catalog_for(message_id) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'returns the correct catalog entry' do
+      cat = Systemd::Journal.catalog_for(message_id)
+      expect(cat).to start_with(message_text)
     end
   end
 
