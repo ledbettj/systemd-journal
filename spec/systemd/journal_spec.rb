@@ -158,4 +158,57 @@ RSpec.describe Systemd::Journal do
     end
   end
 
+  describe 'filter' do
+    it 'does basic filtering as expected' do
+      j.filter(_transport: 'kernel')
+      j.each do |entry|
+        expect(entry._transport).to eq('kernel')
+      end
+      expect(j.count).to eq(435)
+    end
+
+    it 'does basic filtering with multiple options for the same key' do
+      j.filter(_transport: ['kernel', 'driver'])
+      j.each do |entry|
+        expect(%w(kernel driver)).to include(entry._transport)
+      end
+      expect(j.count).to eq(438)
+    end
+
+    it 'does basic filtering with multiple keys' do
+      j.filter({_transport: 'kernel'}, {_systemd_unit: 'systemd-journald.service'})
+      c = j.each_with_object(Hash.new(0)) do |e, h|
+        h[:transport] += 1 if e._transport == 'kernel'
+        h[:unit]      += 1 if e._systemd_unit == 'systemd-journald.service'
+      end
+
+      expect(c[:transport]).to eq(435)
+      expect(c[:unit]).to eq(3)
+    end
+
+    it 'does crazy stupid filtering' do
+      filter = [
+        { _transport: 'kernel', priority: 4   },
+        { _systemd_unit: 'getty@tty1.service' },
+        { _systemd_unit: 'systemd-logind.service', seat_id: 'seat0'},
+        { priority: [3, 5] }
+      ]
+
+      j.filter(*filter)
+
+      c = j.each_with_object(Hash.new(0)) do |e, h|
+        h[:a] += 1 if e._transport == 'kernel' && e.priority == '4'
+        h[:b] += 1 if e._systemd_unit == 'getty@tty1.service'
+        h[:c] += 1 if e._systemd_unit == 'systemd-logind.service' && e[:seat_id] == 'seat0'
+        h[:d] += 1 if ['3', '5'].include?(e.priority)
+      end
+
+      # from journalctl --file <fixture> <filter> --output json | wc -l
+      expect(c[:a]).to eq(26)
+      expect(c[:b]).to eq(1)
+      expect(c[:c]).to eq(1)
+      expect(c[:d]).to eq(11)
+    end
+  end
+
 end
