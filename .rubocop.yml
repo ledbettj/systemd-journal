@@ -4,14 +4,13 @@ SignalException:
 RaiseArgs:
   Enabled: false
 
-SpaceAroundBlockBraces:
-  EnforcedStyle: space_inside_braces
+SpaceInsideBlockBraces:
+  Enabled: true
+SpaceBeforeBlockBraces:
+  Enabled: true
+
 Lambda:
   Enabled: false
-
-GlobalVars:
-  AllowedVariables:
-    - $NO_FFI_SPEC
 
 Documentation:
   Enabled: false

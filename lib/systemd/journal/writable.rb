@@ -7,7 +7,7 @@ module Systemd
     # the systemd-journal.gem by Daniel Mack
     # (https://github.com/zonque/systemd-journal.gem).
     module Writable
-       # system is unusable
+      # system is unusable
       LOG_EMERG   = 0
       # action must be taken immediately
       LOG_ALERT   = 1

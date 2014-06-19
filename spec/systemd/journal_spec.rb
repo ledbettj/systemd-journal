@@ -31,7 +31,7 @@ RSpec.describe Systemd::Journal do
       transports = %w(syslog journal stdout kernel driver)
 
       expect(values.length).to eq(5)
-      expect(values).to        include(*transports)
+      expect(values).to include(*transports)
     end
   end
 
@@ -44,14 +44,15 @@ RSpec.describe Systemd::Journal do
     end
 
     it 'returns the disk usage of the example journal file' do
-      pending "blocks? bytes?"
-      expect(j.disk_usage).to eq(4005888)
+      pending 'blocks? bytes?'
+      expect(j.disk_usage).to eq(4_005_888)
     end
   end
 
   describe 'data_threshold' do
     it 'throws a JournalError on invalid return code' do
-      expect(Systemd::Journal::Native).to receive(:sd_journal_get_data_threshold)
+      expect(Systemd::Journal::Native)
+        .to receive(:sd_journal_get_data_threshold)
         .and_return(-1)
 
       expect { j.data_threshold }.to raise_error(Systemd::JournalError)
@@ -64,7 +65,8 @@ RSpec.describe Systemd::Journal do
 
   describe 'data_threshold=' do
     it 'throws a JournalError on invalid return code' do
-      expect(Systemd::Journal::Native).to receive(:sd_journal_set_data_threshold)
+      expect(Systemd::Journal::Native)
+        .to receive(:sd_journal_set_data_threshold)
         .and_return(-1)
 
       expect { j.data_threshold = 10 }.to raise_error(Systemd::JournalError)
@@ -95,7 +97,7 @@ RSpec.describe Systemd::Journal do
     it 'returns a JournalEntry with the correct values' do
       entry = j.current_entry
       expect(entry._hostname).to eq('arch')
-      expect(entry.message).to   start_with('Allowing runtime journal')
+      expect(entry.message).to start_with('Allowing runtime journal')
     end
   end
 
@@ -115,13 +117,13 @@ RSpec.describe Systemd::Journal do
       entries = j.each.map(&:message)
 
       expect(entries.first).to start_with('Allowing runtime journal')
-      expect(entries.last).to  start_with('ROOT LOGIN ON tty1')
+      expect(entries.last).to start_with('ROOT LOGIN ON tty1')
     end
   end
 
   context 'with catalog messages' do
-    let(:message_id)   { 'f77379a8490b408bbe5f6940505a777b' }
-    let(:message_text) { 'Subject: The Journal has been started' }
+    let(:msg_id)   { 'f77379a8490b408bbe5f6940505a777b' }
+    let(:msg_text) { 'Subject: The Journal has been started' }
 
     describe 'catalog_for' do
       subject(:j) { Systemd::Journal }
@@ -131,12 +133,12 @@ RSpec.describe Systemd::Journal do
           .to receive(:sd_journal_get_catalog_for_message_id)
           .and_return(-1)
 
-        expect { j.catalog_for(message_id) }.to raise_error(Systemd::JournalError)
+        expect { j.catalog_for(msg_id) }.to raise_error(Systemd::JournalError)
       end
 
       it 'returns the correct catalog entry' do
-        cat = Systemd::Journal.catalog_for(message_id)
-        expect(cat).to start_with(message_text)
+        cat = Systemd::Journal.catalog_for(msg_id)
+        expect(cat).to start_with(msg_text)
       end
     end
 
@@ -151,9 +153,9 @@ RSpec.describe Systemd::Journal do
 
       it 'returns the correct catalog entry' do
         # find first entry with a catalog
-        j.move_next while !j.current_entry.catalog?
+        j.move_next until j.current_entry.catalog?
 
-        expect(j.current_catalog).to start_with(message_text)
+        expect(j.current_catalog).to start_with(msg_text)
       end
     end
   end
@@ -168,7 +170,7 @@ RSpec.describe Systemd::Journal do
     end
 
     it 'does basic filtering with multiple options for the same key' do
-      j.filter(_transport: ['kernel', 'driver'])
+      j.filter(_transport: %w(kernel driver))
       j.each do |entry|
         expect(%w(kernel driver)).to include(entry._transport)
       end
@@ -176,7 +178,11 @@ RSpec.describe Systemd::Journal do
     end
 
     it 'does basic filtering with multiple keys' do
-      j.filter({_transport: 'kernel'}, {_systemd_unit: 'systemd-journald.service'})
+      j.filter(
+        { _transport: 'kernel' },
+        { _systemd_unit: 'systemd-journald.service' }
+      )
+
       c = j.each_with_object(Hash.new(0)) do |e, h|
         h[:transport] += 1 if e._transport == 'kernel'
         h[:unit]      += 1 if e._systemd_unit == 'systemd-journald.service'
@@ -190,7 +196,7 @@ RSpec.describe Systemd::Journal do
       filter = [
         { _transport: 'kernel', priority: 4   },
         { _systemd_unit: 'getty@tty1.service' },
-        { _systemd_unit: 'systemd-logind.service', seat_id: 'seat0'},
+        { _systemd_unit: 'systemd-logind.service', seat_id: 'seat0' },
         { priority: [3, 5] }
       ]
 
@@ -199,8 +205,10 @@ RSpec.describe Systemd::Journal do
       c = j.each_with_object(Hash.new(0)) do |e, h|
         h[:a] += 1 if e._transport == 'kernel' && e.priority == '4'
         h[:b] += 1 if e._systemd_unit == 'getty@tty1.service'
-        h[:c] += 1 if e._systemd_unit == 'systemd-logind.service' && e[:seat_id] == 'seat0'
-        h[:d] += 1 if ['3', '5'].include?(e.priority)
+        if e._systemd_unit == 'systemd-logind.service' && e[:seat_id] == 'seat0'
+          h[:c] += 1
+        end
+        h[:d] += 1 if %w(3 5).include?(e.priority)
       end
 
       # from journalctl --file <fixture> <filter> --output json | wc -l

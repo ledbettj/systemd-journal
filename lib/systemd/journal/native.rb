@@ -8,8 +8,8 @@ module Systemd
       # rubocop:disable LineLength
       require 'ffi'
       extend FFI::Library
-      ffi_lib %w{ libsystemd.so.0         libsystemd.so
-                  libsystemd-journal.so.0 libsystemd-journal.so}
+      ffi_lib %w( libsystemd.so.0         libsystemd.so
+                  libsystemd-journal.so.0 libsystemd-journal.so)
 
       # setup/teardown
       attach_function :sd_journal_open,           [:pointer, :int], :int
@@ -49,8 +49,8 @@ module Systemd
       attach_function :sd_journal_restart_unique,   [:pointer], :void
 
       # event notification
-      enum            :wake_reason,     [:nop, :append, :invalidate]
-      attach_function :sd_journal_wait, [:pointer, :uint64], :wake_reason, blocking: true
+      enum :wake_reason, [:nop, :append, :invalidate]
+      attach_function :sd_journal_wait,        [:pointer, :uint64], :wake_reason, blocking: true
       attach_function :sd_journal_get_fd,      [:pointer], :int
       attach_function :sd_journal_process,     [:pointer], :wake_reason
       attach_function :sd_journal_reliable_fd, [:pointer], :int

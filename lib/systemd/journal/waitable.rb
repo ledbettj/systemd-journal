@@ -68,7 +68,6 @@ module Systemd
         raise JournalError.new(rc) if rc.is_a?(Fixnum) && rc < 0
         rc == :nop ? nil : rc
       end
-
     end
   end
 end
