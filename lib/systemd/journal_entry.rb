@@ -19,9 +19,10 @@ module Systemd
       end
     end
 
-    # not all journal entries will have all fields.  don't raise an error.
-    def method_missing(m)
-      nil
+    def method_missing(m, *args)
+      # not all journal entries will have all fields.  don't raise an error
+      # unless the user passed arguments.
+      super(m, *args) unless args.empty?
     end
 
     # Get the value of a given field in the entry, or nil if it doesn't exist
