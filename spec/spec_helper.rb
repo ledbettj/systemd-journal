@@ -4,7 +4,7 @@ require 'simplecov'
 
 module SpecHelper
   def fixture_dir
-    @path ||= File.join(File.expand_path(__dir__), 'fixtures')
+    @path ||= File.join(File.expand_path(__FILE__), '../fixtures')
   end
 
   def journal_file
