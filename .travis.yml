@@ -16,9 +16,8 @@ before_script:
       --disable-timesyncd --disable-localed --disable-resolved
       --disable-networkd --disable-tests --disable-coredump --disable-hostnamed
       --disable-manpages --disable-libcryptsetup --disable-python-devel
-      --prefix=/tmp/systemd-install/usr
+      --sysconfdir=/etc --localstatedir=/var --libdir=/usr/lib
+      --with-rootprefix= --with-rootlibdir=/lib
   - cd /tmp/systemd/ && make && sudo make install
   - echo "done building in $(pwd), switching back to $PREV_DIR, library path is $LD_LIBRARY_PATH"
   - cd $PREV_DIR
-env:
-  - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/tmp/systemd-install/usr/lib
