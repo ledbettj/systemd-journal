@@ -169,6 +169,15 @@ RSpec.describe Systemd::Journal do
       expect(j.count).to eq(435)
     end
 
+    it 'does filtering with AND conditions' do
+      j.filter(_transport: 'kernel', priority: 3)
+      expect(j.count).to eq(2)
+      j.each do |e|
+        expect(e._transport).to eq('kernel')
+        expect(e.priority).to eq('3')
+      end
+    end
+
     it 'does basic filtering with multiple options for the same key' do
       j.filter(_transport: %w(kernel driver))
       j.each do |entry|
