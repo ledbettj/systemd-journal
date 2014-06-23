@@ -228,4 +228,54 @@ RSpec.describe Systemd::Journal do
     end
   end
 
+  describe 'cursor' do
+    it 'returns some opaque string' do
+      expect(j.cursor).to be_kind_of(String)
+    end
+
+    it 'throws an error on failure' do
+      expect(Systemd::Journal::Native).to receive(:sd_journal_get_cursor)
+        .and_return(-1)
+
+      expect { j.cursor }.to raise_error(Systemd::JournalError)
+    end
+  end
+
+  describe 'cursor?' do
+    let!(:cursor) { j.cursor }
+    it 'returns true if the cursor matches' do
+      expect(j.cursor?(cursor)).to be true
+    end
+
+    it 'throws an error on failure' do
+      expect(Systemd::Journal::Native).to receive(:sd_journal_test_cursor)
+        .and_return(-1)
+
+      expect { j.cursor?(cursor) }.to raise_error(Systemd::JournalError)
+    end
+  end
+
+  describe 'seek' do
+    it 'treats a string parameter as the cursor' do
+      cursor = j.cursor
+      j.move(3)
+      expect(j.cursor?(cursor)).to be false
+      j.seek(cursor)
+      j.move_next
+      expect(j.cursor?(cursor)).to be true
+    end
+
+    it 'can seek to the end' do
+      j.seek(:tail)
+      j.move_previous
+      expect(j.move_next).to be false
+    end
+
+    it 'can seek to the start' do
+      j.seek(:start)
+      j.move_next
+      expect(j.move_previous).to be false
+    end
+  end
+
 end
