@@ -40,6 +40,9 @@ module Systemd
       attach_function :sd_journal_get_catalog,    [:pointer, :pointer], :int
       attach_function :sd_journal_get_catalog_for_message_id, [Systemd::Id128::Native::Id128.by_value, :pointer], :int
 
+      attach_function :sd_journal_get_realtime_usec,  [:pointer, :pointer], :int
+      attach_function :sd_journal_get_monotonic_usec, [:pointer, :pointer, :pointer], :int
+
       attach_function :sd_journal_get_data_threshold, [:pointer, :pointer], :int
       attach_function :sd_journal_set_data_threshold, [:pointer, :size_t],  :int
 

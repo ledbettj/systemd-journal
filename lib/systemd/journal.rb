@@ -121,7 +121,11 @@ module Systemd
         yield(key, value) if block_given?
       end
 
-      JournalEntry.new(results)
+      JournalEntry.new(
+        results,
+        realtime_ts:  read_realtime,
+        monotonic_ts: read_monotonic
+      )
     end
 
     def current_catalog
@@ -200,6 +204,24 @@ module Systemd
     end
 
     private
+
+    def read_realtime
+      out = FFI::MemoryPointer.new(:uint64, 1)
+      rc = Native.sd_journal_get_realtime_usec(@ptr, out)
+      raise JournalError.new(rc) if rc < 0
+
+      out.read_uint64
+    end
+
+    def read_monotonic
+      out  = FFI::MemoryPointer.new(:uint64, 1)
+      boot = FFI::MemoryPointer.new(Systemd::Id128::Native::Id128, 1)
+
+      rc = Native.sd_journal_get_monotonic_usec(@ptr, out, boot)
+      raise JournalError.new(rc) if rc < 0
+
+      [out.read_uint64, boot.to_s]
+    end
 
     def array_to_ptrs(strings)
       ptr = FFI::MemoryPointer.new(:pointer, strings.length + 1)
