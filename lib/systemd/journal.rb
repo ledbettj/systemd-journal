@@ -220,7 +220,7 @@ module Systemd
       rc = Native.sd_journal_get_monotonic_usec(@ptr, out, boot)
       raise JournalError.new(rc) if rc < 0
 
-      [out.read_uint64, boot.to_s]
+      [out.read_uint64, Systemd::Id128::Native::Id128.new(boot).to_s]
     end
 
     def array_to_ptrs(strings)
