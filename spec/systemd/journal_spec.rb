@@ -276,6 +276,21 @@ RSpec.describe Systemd::Journal do
       j.move_next
       expect(j.move_previous).to be false
     end
+
+    it 'can seek based on timestamp' do
+      j.seek(Time.parse('2013-03-28T21:07:21-04:00'))
+      j.move_next
+
+      entry = j.current_entry
+      ts    = entry.realtime_timestamp
+
+      expect(entry.message).to start_with('input: ImExPS/2')
+      expect(ts.utc.iso8601).to eq('2013-03-29T01:07:21Z')
+    end
+
+    it 'throws an ArgumentError for other types' do
+      expect { j.seek(5) }.to raise_error(ArgumentError)
+    end
   end
 
 end
