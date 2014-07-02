@@ -68,6 +68,8 @@ module Systemd
       attach_function :sd_journal_print,  [:int, :string], :int
       attach_function :sd_journal_send,   [:varargs], :int
       attach_function :sd_journal_perror, [:string], :int
+      attach_function :sd_journal_stream_fd, [:string, :int, :bool], :int
+
       # misc
       attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
     end
