@@ -2,7 +2,7 @@ require 'spec_helper'
 
 RSpec.describe Systemd::Journal do
   subject(:j) do
-    Systemd::Journal.new(files: [journal_file]).tap do |j|
+    Systemd::Journal.new(file: journal_file).tap do |j|
       j.seek(:head)
       j.move_next
     end
