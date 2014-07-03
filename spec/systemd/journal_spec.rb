@@ -255,6 +255,39 @@ RSpec.describe Systemd::Journal do
     end
   end
 
+  describe 'move' do
+    it 'moves by the specified number of entries' do
+      j.move(1)
+      expect(j.read_field(:message)).to eq(journal_json[1]['MESSAGE'])
+    end
+
+    it 'does not move with 0' do
+      j.move(1)
+      j.move(0)
+      expect(j.read_field(:message)).to eq(journal_json[1]['MESSAGE'])
+    end
+
+    it 'moves backwards' do
+      j.move(3)
+      j.move(-1)
+      expect(j.read_field(:message)).to eq(journal_json[2]['MESSAGE'])
+    end
+
+    it 'returns the number of entries moved' do
+      expect(j.move(3)).to eq(3)
+    end
+
+    it 'returns the number of entries moved even if if less' do
+      j.move(2)
+      expect(j.read_field(:message)).to eq(journal_json[2]['MESSAGE'])
+      expect(j.move(-5)).to eq(2)
+    end
+
+    it 'returns 0 if it did not move' do
+      expect(j.move(-1)).to eq(0)
+    end
+  end
+
   describe 'seek' do
     it 'treats a string parameter as the cursor' do
       cursor = j.cursor
