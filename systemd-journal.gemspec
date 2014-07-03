@@ -18,7 +18,9 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
 
-  gem.add_dependency 'ffi', '~>1.9.0'
+  gem.required_ruby_version = '>= 1.9.3'
+
+  gem.add_runtime_dependency 'ffi', '~> 1.9.0'
 
   gem.add_development_dependency 'rspec',     '~> 3.0.0'
   gem.add_development_dependency 'simplecov', '~> 0.7.1'
