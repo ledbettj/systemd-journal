@@ -14,8 +14,6 @@ module Systemd
       super(LIBC.strerror(@code))
     end
 
-    private
-
     # FFI wrapper for the C standard library to pull in `strerror`.
     # @private
     module LIBC

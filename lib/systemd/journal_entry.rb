@@ -10,8 +10,9 @@ module Systemd
     # {Systemd::Journal} methods such as {Systemd::Journal#current_entry}.
     # @param [Hash] entry a hash containing all the key-value pairs associated
     #   with a given journal entry.
-    def initialize(entry)
+    def initialize(entry, context = {})
       @entry  = entry
+      @ctx    = context
       @fields = entry.map do |key, value|
         name = key.downcase.to_sym
         define_singleton_method(name) { value } unless respond_to?(name)
@@ -19,9 +20,23 @@ module Systemd
       end
     end
 
-    # not all journal entries will have all fields.  don't raise an error.
-    def method_missing(m)
-      nil
+    # Returns the wall-clock time that this entry was received by the journal.
+    # @return [Time]
+    def realtime_timestamp
+      @realtime_timestamp ||= Time.at(0, @ctx[:realtime_ts])
+    end
+
+    # Returns the monotonic time (time since boot) that this entry was received
+    # by the journal.  This should be associated with a boot_id.
+    # @return [Time]
+    def monotonic_timestamp
+      @monotonic_timestamp ||= Time.at(0, @ctx[:monotonic_ts].first)
+    end
+
+    def method_missing(m, *args)
+      # not all journal entries will have all fields.  don't raise an error
+      # unless the user passed arguments.
+      super(m, *args) unless args.empty?
     end
 
     # Get the value of a given field in the entry, or nil if it doesn't exist

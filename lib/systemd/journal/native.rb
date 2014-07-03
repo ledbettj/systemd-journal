@@ -8,8 +8,8 @@ module Systemd
       # rubocop:disable LineLength
       require 'ffi'
       extend FFI::Library
-      ffi_lib %w{ libsystemd.so.0         libsystemd.so
-                  libsystemd-journal.so.0 libsystemd-journal.so}
+      ffi_lib %w( libsystemd.so.0         libsystemd.so
+                  libsystemd-journal.so.0 libsystemd-journal.so)
 
       # setup/teardown
       attach_function :sd_journal_open,           [:pointer, :int], :int
@@ -40,6 +40,9 @@ module Systemd
       attach_function :sd_journal_get_catalog,    [:pointer, :pointer], :int
       attach_function :sd_journal_get_catalog_for_message_id, [Systemd::Id128::Native::Id128.by_value, :pointer], :int
 
+      attach_function :sd_journal_get_realtime_usec,  [:pointer, :pointer], :int
+      attach_function :sd_journal_get_monotonic_usec, [:pointer, :pointer, :pointer], :int
+
       attach_function :sd_journal_get_data_threshold, [:pointer, :pointer], :int
       attach_function :sd_journal_set_data_threshold, [:pointer, :size_t],  :int
 
@@ -49,8 +52,8 @@ module Systemd
       attach_function :sd_journal_restart_unique,   [:pointer], :void
 
       # event notification
-      enum            :wake_reason,     [:nop, :append, :invalidate]
-      attach_function :sd_journal_wait, [:pointer, :uint64], :wake_reason, blocking: true
+      enum :wake_reason, [:nop, :append, :invalidate]
+      attach_function :sd_journal_wait,        [:pointer, :uint64], :wake_reason, blocking: true
       attach_function :sd_journal_get_fd,      [:pointer], :int
       attach_function :sd_journal_process,     [:pointer], :wake_reason
       attach_function :sd_journal_reliable_fd, [:pointer], :int
@@ -65,6 +68,8 @@ module Systemd
       attach_function :sd_journal_print,  [:int, :string], :int
       attach_function :sd_journal_send,   [:varargs], :int
       attach_function :sd_journal_perror, [:string], :int
+      attach_function :sd_journal_stream_fd, [:string, :int, :bool], :int
+
       # misc
       attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
     end

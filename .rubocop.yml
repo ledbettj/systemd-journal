@@ -4,14 +4,28 @@ SignalException:
 RaiseArgs:
   Enabled: false
 
-SpaceAroundBlockBraces:
-  EnforcedStyle: space_inside_braces
+SpaceInsideBlockBraces:
+  Enabled: true
+SpaceBeforeBlockBraces:
+  Enabled: true
+
 Lambda:
   Enabled: false
 
-GlobalVars:
-  AllowedVariables:
-    - $NO_FFI_SPEC
-
 Documentation:
+  Enabled: false
+
+MethodLength:
+  Max: 20
+
+ClassLength:
+  Max: 150
+
+Style/FileName:
+  Enabled: false
+
+Style/GuardClause:
+  Enabled: false
+
+Style/ClassAndModuleChildren:
   Enabled: false

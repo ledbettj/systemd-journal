@@ -7,7 +7,7 @@ module Systemd
     # the systemd-journal.gem by Daniel Mack
     # (https://github.com/zonque/systemd-journal.gem).
     module Writable
-       # system is unusable
+      # system is unusable
       LOG_EMERG   = 0
       # action must be taken immediately
       LOG_ALERT   = 1
@@ -32,6 +32,24 @@ module Systemd
       # methods in this module will be available as class methods on
       #  {Systemd::Journal}
       module ClassMethods
+
+        # Creates a new IO stream which writes newline-seperated messages to
+        # the journal.
+        # @param identifier [String] this value will be passed as
+        #   SYSLOG_IDENTIFIER to the journal.
+        # @param priority [Integer] the log level for events writen to this
+        #   stream.
+        # @param opts [Hash]
+        # @option opts [Boolean] :prefix true to enable kernel-style log
+        #   priority prefixes
+        # @return [IO]
+        def log_stream(identifier, priority, opts = {})
+          fd = Native.sd_journal_stream_fd(identifier, priority, !!opts[:prefix])
+          raise JournalError.new(fd) if fd < 0
+
+          IO.new(fd, File::WRONLY, encoding: Encoding::UTF_8)
+        end
+
         # write the value of the c errno constant to the systemd journal in the
         # style of the perror() function.
         # @param [String] message the text to prefix the error message with.
