@@ -40,6 +40,14 @@ RSpec.describe Systemd::JournalEntry do
     end
   end
 
+  describe 'to_h' do
+    it 'returns a deep copy of the entry' do
+      copy = subject.to_h
+      expect(copy).to eq(hash)
+      expect { copy['_PID'] << '3' }.to_not change { subject._pid }
+    end
+  end
+
   describe 'catalog' do
     context 'without a catalog' do
       it 'returns nil if the entry has no catalog' do

@@ -68,6 +68,10 @@ module Systemd
       !self[:message_id].nil?
     end
 
+    def to_h
+      @entry.each_with_object({}) { |(k,v), h| h[k] = v.dup }
+    end
+
     # @private
     def inspect
       format('#<%s:0x%016x %s>',
