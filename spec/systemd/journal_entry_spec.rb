@@ -36,7 +36,8 @@ RSpec.describe Systemd::JournalEntry do
     end
 
     it 'yields each key/value in turn' do
-      expect(entry.map{ |k,v| [k,v] }).to eq([['_PID', pid], ['MESSAGE', msg]])
+      items = entry.map { |k, v| [k, v] }
+      expect(items).to eq([['_PID', pid], ['MESSAGE', msg]])
     end
   end
 

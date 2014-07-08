@@ -69,16 +69,12 @@ module Systemd
     end
 
     def to_h
-      @entry.each_with_object({}) { |(k,v), h| h[k] = v.dup }
+      @entry.each_with_object({}) { |(k, v), h| h[k] = v.dup }
     end
 
     # @private
     def inspect
-      format('#<%s:0x%016x %s>',
-        self.class.name,
-        self.object_id,
-        @inspect
-      )
+      format('#<%s:0x%016x %s>', self.class.name, object_id, @inspect)
     end
 
     private

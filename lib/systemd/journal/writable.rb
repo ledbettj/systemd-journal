@@ -32,7 +32,6 @@ module Systemd
       # methods in this module will be available as class methods on
       #  {Systemd::Journal}
       module ClassMethods
-
         # Creates a new IO stream which writes newline-seperated messages to
         # the journal.
         # @param identifier [String] this value will be passed as
@@ -44,7 +43,11 @@ module Systemd
         #   priority prefixes
         # @return [IO]
         def log_stream(identifier, priority, opts = {})
-          fd = Native.sd_journal_stream_fd(identifier, priority, !!opts[:prefix])
+          fd = Native.sd_journal_stream_fd(
+            identifier,
+            priority,
+            !opts[:prefix].nil?
+          )
           raise JournalError.new(fd) if fd < 0
 
           IO.new(fd, File::WRONLY, encoding: Encoding::UTF_8)

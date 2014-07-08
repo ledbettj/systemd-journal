@@ -196,9 +196,10 @@ module Systemd
 
     # @private
     def inspect
-      format('#<%s:0x%016x target: "%s", flags: 0x%08x>',
+      format(
+        '#<%s:0x%016x target: "%s", flags: 0x%08x>',
         self.class.name,
-        self.object_id,
+        object_id,
         @open_target,
         @open_flags
       )
@@ -215,7 +216,7 @@ module Systemd
         Native.sd_journal_open_directory(ptr, opts[:path], 0)
       when opts[:files]
         files = Array(opts[:files])
-        @open_target = "file#{files.one? ? '': 's'}:#{files.join(',')}"
+        @open_target = "file#{files.one? ? '' : 's'}:#{files.join(',')}"
         Native.sd_journal_open_files(ptr, array_to_ptrs(files), 0)
       when opts[:container]
         @open_flags = flags
@@ -223,7 +224,7 @@ module Systemd
         Native.sd_journal_open_container(ptr, opts[:container], flags)
       else
         @open_flags = flags
-        @open_target = "journal:local"
+        @open_target = 'journal:local'
         Native.sd_journal_open(ptr, flags)
       end
     end
