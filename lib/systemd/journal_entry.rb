@@ -11,13 +11,17 @@ module Systemd
     # @param [Hash] entry a hash containing all the key-value pairs associated
     #   with a given journal entry.
     def initialize(entry, context = {})
+      inspect = []
       @entry  = entry
       @ctx    = context
       @fields = entry.map do |key, value|
         name = key.downcase.to_sym
         define_singleton_method(name) { value } unless respond_to?(name)
+
+        inspect.push("#{name}: '#{value}'")
         name
       end
+      @inspect = inspect.join(', ')
     end
 
     # Returns the wall-clock time that this entry was received by the journal.
@@ -62,6 +66,15 @@ module Systemd
 
     def catalog?
       !self[:message_id].nil?
+    end
+
+    # @private
+    def inspect
+      format('#<%s:0x%016x %s>',
+        self.class.name,
+        self.object_id,
+        @inspect
+      )
     end
 
     private
