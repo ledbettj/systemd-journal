@@ -27,6 +27,7 @@ module Systemd
     # Returns the wall-clock time that this entry was received by the journal.
     # @return [Time]
     def realtime_timestamp
+      return nil unless @ctx.key?(:realtime_ts)
       @realtime_timestamp ||= Time.at(0, @ctx[:realtime_ts])
     end
 
@@ -34,6 +35,7 @@ module Systemd
     # by the journal.  This should be associated with a boot_id.
     # @return [Time]
     def monotonic_timestamp
+      return nil unless @ctx.key?(:monotonic_ts)
       @monotonic_timestamp ||= Time.at(0, @ctx[:monotonic_ts].first)
     end
 
