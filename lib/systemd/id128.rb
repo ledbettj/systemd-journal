@@ -59,7 +59,7 @@ module Systemd
                :qwords, [:uint64, 2]
 
         def to_s
-          ('%02x' * 16) % self[:bytes].to_a
+          format('%02x' * 16, *self[:bytes].to_a)
         end
 
         def self.from_s(str)
