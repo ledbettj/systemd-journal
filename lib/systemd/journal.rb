@@ -9,8 +9,8 @@ require 'systemd/journal/waitable'
 require 'systemd/journal_error'
 require 'systemd/journal_entry'
 require 'systemd/id128'
-
 require 'systemd/ffi_size_t'
+require 'systemd'
 
 module Systemd
   # Class to allow interacting with the systemd journal.
