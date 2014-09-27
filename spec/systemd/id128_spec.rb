@@ -15,17 +15,21 @@ RSpec.describe Systemd::Id128 do
     end
   end
 
-  describe 'boot_id' do
-    it 'should be a 128 bit hexadecimal string' do
-      expect(id128.boot_id).to match(/[0-9a-f]{16}/)
-    end
+  # travis-ci does not boot with systemd so these cases
+  # will raise exceptions.
+  context 'when booted under systemd' do
+    describe 'boot_id' do
+      it 'should be a 128 bit hexadecimal string' do
+        expect(id128.boot_id).to match(/[0-9a-f]{16}/)
+      end
 
-    it 'should match when called twice' do
-      b1 = id128.boot_id
-      b2 = id128.boot_id
-      expect(b1).to eq(b2)
+      it 'should match when called twice' do
+        b1 = id128.boot_id
+        b2 = id128.boot_id
+        expect(b1).to eq(b2)
+      end
     end
-  end
+  end unless ENV['TRAVIS']
 
   describe 'random' do
     it 'should be a 128 bit hexadecimal string' do
@@ -38,6 +42,4 @@ RSpec.describe Systemd::Id128 do
       expect(r1).to_not eq(r2)
     end
   end
-
-
 end
