@@ -22,7 +22,8 @@ thing.
 
 Obviously you will need to have
 [systemd](http://www.freedesktop.org/wiki/Software/systemd/) installed on your
-system in order to use the gem.  Currently we support systemd 208 or higher.
+system (specifically libsystemd or the older libsystemd-journal) in order to
+use the gem.  Currently we support systemd 208 or higher.
 
 ## Usage
 
