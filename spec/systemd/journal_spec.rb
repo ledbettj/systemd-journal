@@ -326,4 +326,45 @@ RSpec.describe Systemd::Journal do
     end
   end
 
+  describe 'wait' do
+    it 'returns nil if nothing happens' do
+      expect(Systemd::Journal::Native)
+        .to receive(:sd_journal_wait)
+        .and_return(:nop)
+
+      expect(j.wait(1)).to be nil
+    end
+
+    it 'returns :append if new entries are found' do
+      expect(Systemd::Journal::Native)
+        .to receive(:sd_journal_wait)
+        .and_return(:append)
+
+      expect(j.wait(1)).to be :append
+    end
+
+    it 'raise a JournalError on error' do
+      expect(Systemd::Journal::Native)
+        .to receive(:sd_journal_wait)
+        .and_return(-1)
+
+      expect { j.wait(1) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'can use select' do
+      expect(Systemd::Journal::Native).to_not receive(:sd_journal_wait)
+      j.wait(1, select: true)
+    end
+  end
+
+  describe 'wait_select_reliable?' do
+    it 'should not throw an error' do
+      expect { j.wait_select_reliable? }.to_not raise_error
+    end
+
+    it 'should return a boolean' do
+      expect([true, false]).to include(j.wait_select_reliable?)
+    end
+  end
+
 end
