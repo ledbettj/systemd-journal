@@ -17,6 +17,7 @@ module Systemd
       attach_function :sd_journal_close,          [:pointer], :void
 
       attach_function :sd_journal_open_files,     [:pointer, :pointer, :int], :int
+      attach_function :sd_journal_open_container, [:pointer, :string, :int], :int
 
       # navigation
       attach_function :sd_journal_next,          [:pointer], :int
