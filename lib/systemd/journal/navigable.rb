@@ -29,9 +29,9 @@ module Systemd
       # Move the read pointer by `offset` entries.
       # @param [Integer] offset how many entries to move the read pointer by.
       #   If this value is positive, the read pointer moves forward. Otherwise,
-      #   it moves backwards.
+      #   it moves backwards.  Defaults to moving forward one entry.
       # @return [Integer] number of entries the read pointer actually moved.
-      def move(offset)
+      def move(offset = 1)
         offset > 0 ? move_next_skip(offset) : move_previous_skip(-offset)
       end
 

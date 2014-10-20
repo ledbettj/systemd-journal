@@ -36,7 +36,16 @@ RSpec.describe Systemd::JournalEntry do
     end
 
     it 'yields each key/value in turn' do
-      expect(entry.map{ |k,v| [k,v] }).to eq([['_PID', pid], ['MESSAGE', msg]])
+      items = entry.map { |k, v| [k, v] }
+      expect(items).to eq([['_PID', pid], ['MESSAGE', msg]])
+    end
+  end
+
+  describe 'to_h' do
+    it 'returns a deep copy of the entry' do
+      copy = subject.to_h
+      expect(copy).to eq(hash)
+      expect { copy['_PID'] << '3' }.to_not change { subject._pid }
     end
   end
 

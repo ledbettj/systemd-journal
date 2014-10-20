@@ -9,7 +9,7 @@ Ruby bindings for reading from the systemd journal.
 
 Add this line to your application's Gemfile:
 
-    gem 'systemd-journal', '~> 1.1.0'
+    gem 'systemd-journal', '~> 1.2.0'
 
 And then execute:
 
@@ -22,7 +22,8 @@ thing.
 
 Obviously you will need to have
 [systemd](http://www.freedesktop.org/wiki/Software/systemd/) installed on your
-system in order to use the gem.  Currently we support systemd 208 or higher.
+system (specifically libsystemd or the older libsystemd-journal) in order to
+use the gem.  Currently we support systemd 208 or higher.
 
 ## Usage
 

@@ -21,3 +21,5 @@ before_script:
   - cd /tmp/systemd/ && make && sudo make install
   - echo "done building in $(pwd), switching back to $PREV_DIR, library path is $LD_LIBRARY_PATH"
   - cd $PREV_DIR
+  - >
+      [ -f /etc/machine-id ] || cat /dev/urandom | tr -cd 'a-f0-9' | head -c 32 | awk '{ print $1 }' | sudo tee /etc/machine-id

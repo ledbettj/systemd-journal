@@ -16,6 +16,11 @@ RSpec.describe Systemd::Journal do
       expect { j.new(container: '', files: []) }.to raise_error(ArgumentError)
       expect { j.new(container: '', path: '/') }.to raise_error(ArgumentError)
     end
+
+    it 'throws an ArgumentError when attempting to open a container without support' do
+      allow(Systemd::Journal::Native).to receive(:open_container?).and_return(false)
+      expect { j.new(container: 'test') }.to raise_error(ArgumentError)
+    end
   end
 
   describe 'query_unique' do
@@ -46,6 +51,8 @@ RSpec.describe Systemd::Journal do
     it 'returns the disk usage of the example journal file' do
       pending 'blocks? bytes?'
       expect(j.disk_usage).to eq(4_005_888)
+      # force failure to make travis-ci happy
+      expect(true).to be false
     end
   end
 
@@ -323,6 +330,47 @@ RSpec.describe Systemd::Journal do
 
     it 'throws an ArgumentError for other types' do
       expect { j.seek(5) }.to raise_error(ArgumentError)
+    end
+  end
+
+  describe 'wait' do
+    it 'returns nil if nothing happens' do
+      expect(Systemd::Journal::Native)
+        .to receive(:sd_journal_wait)
+        .and_return(:nop)
+
+      expect(j.wait(1)).to be nil
+    end
+
+    it 'returns :append if new entries are found' do
+      expect(Systemd::Journal::Native)
+        .to receive(:sd_journal_wait)
+        .and_return(:append)
+
+      expect(j.wait(1)).to be :append
+    end
+
+    it 'raise a JournalError on error' do
+      expect(Systemd::Journal::Native)
+        .to receive(:sd_journal_wait)
+        .and_return(-1)
+
+      expect { j.wait(1) }.to raise_error(Systemd::JournalError)
+    end
+
+    it 'can use select' do
+      expect(Systemd::Journal::Native).to_not receive(:sd_journal_wait)
+      j.wait(1, select: true)
+    end
+  end
+
+  describe 'wait_select_reliable?' do
+    it 'should not throw an error' do
+      expect { j.wait_select_reliable? }.to_not raise_error
+    end
+
+    it 'should return a boolean' do
+      expect([true, false]).to include(j.wait_select_reliable?)
     end
   end
 

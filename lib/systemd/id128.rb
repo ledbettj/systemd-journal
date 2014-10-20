@@ -9,7 +9,7 @@ module Systemd
     # from this machine.
     # @example Filter journal to the current machine.
     #   j = Systemd::Journal.new
-    #   j.add_match('_MACHINE_ID', Systemd::Id128.machine_id)
+    #   j.filter(_machine_id: Systemd::Id128.machine_id)
     # @return [String] 128-bit hex string representing the current machine.
     def self.machine_id
       @machine_id ||= read_id128(:sd_id128_get_machine)
@@ -20,7 +20,7 @@ module Systemd
     # the current boot.
     # @example Filter journal to the current boot.
     #   j = Systemd::Journal.new
-    #   j.add_match('_BOOT_ID', Systemd::Id128.boot_id)
+    #   j.filter(_boot_id: Systemd::Id128.boot_id)
     # @return [String] 128-bit hex string representing the current boot.
     def self.boot_id
       @boot_id ||= read_id128(:sd_id128_get_boot)
@@ -59,7 +59,7 @@ module Systemd
                :qwords, [:uint64, 2]
 
         def to_s
-          ('%02x' * 16) % self[:bytes].to_a
+          format('%02x' * 16, *self[:bytes].to_a)
         end
 
         def self.from_s(str)
