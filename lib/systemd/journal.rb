@@ -219,6 +219,7 @@ module Systemd
         @open_target = "file#{files.one? ? '' : 's'}:#{files.join(',')}"
         Native.sd_journal_open_files(ptr, array_to_ptrs(files), 0)
       when opts[:container]
+        raise ArgumentError.new('This libsystemd-journal version does not support sd_journal_open_container') unless Native.open_container?
         @open_flags = flags
         @open_target = "container:#{opts[:container]}"
         Native.sd_journal_open_container(ptr, opts[:container], flags)

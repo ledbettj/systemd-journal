@@ -16,6 +16,11 @@ RSpec.describe Systemd::Journal do
       expect { j.new(container: '', files: []) }.to raise_error(ArgumentError)
       expect { j.new(container: '', path: '/') }.to raise_error(ArgumentError)
     end
+
+    it 'throws an ArgumentError when attempting to open a container without support' do
+      allow(Systemd::Journal::Native).to receive(:open_container?).and_return(false)
+      expect { j.new(container: 'test') }.to raise_error(ArgumentError)
+    end
   end
 
   describe 'query_unique' do
