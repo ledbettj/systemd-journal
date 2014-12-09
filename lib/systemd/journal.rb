@@ -282,7 +282,7 @@ module Systemd
     end
 
     def string_from_out_ptr(p, len)
-      p.read_pointer.read_string_length(len)
+      p.read_pointer.read_string(len)
     end
 
     # some sd_journal_* functions return strings that we're expected to free
