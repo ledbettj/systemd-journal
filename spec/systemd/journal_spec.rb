@@ -359,7 +359,14 @@ RSpec.describe Systemd::Journal do
     end
 
     it 'can use select' do
+      pending "not available on JRUBY" if Systemd::Journal::IS_JRUBY
       expect(Systemd::Journal::Native).to_not receive(:sd_journal_wait)
+      j.wait(1, select: true)
+    end
+
+    it 'ignores request to use select on JRuby' do
+      pending "not necessary on MRI" unless Systemd::Journal::IS_JRUBY
+      expect(Systemd::Journal::Native).to receive(:sd_journal_wait)
       j.wait(1, select: true)
     end
   end

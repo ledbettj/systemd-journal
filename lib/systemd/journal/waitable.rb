@@ -1,6 +1,8 @@
 module Systemd
   class Journal
     module Waitable
+      IS_JRUBY = (RUBY_ENGINE == 'jruby')
+
       # Block until the journal is changed.
       # @param timeout_usec [Integer] maximum number of microseconds to wait
       #   or `-1` to wait indefinitely.
@@ -14,7 +16,7 @@ module Systemd
       # @return [Symbol] :append new entries were appened to the journal.
       # @return [Symbol] :invalidate journal files were added/removed/rotated.
       def wait(timeout_usec = -1, opts = {})
-        if opts[:select]
+        if opts[:select] && !IS_JRUBY
           wait_select(timeout_usec)
         else
           rc = Native.sd_journal_wait(@ptr, timeout_usec)
