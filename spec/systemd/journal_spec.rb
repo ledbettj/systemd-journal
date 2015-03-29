@@ -145,7 +145,7 @@ RSpec.describe Systemd::Journal do
 
       it 'returns the correct catalog entry' do
         cat = Systemd::Journal.catalog_for(msg_id)
-        expect(cat).to start_with(msg_text)
+        expect(cat.downcase).to start_with(msg_text.downcase)
       end
     end
 
@@ -162,7 +162,7 @@ RSpec.describe Systemd::Journal do
         # find first entry with a catalog
         j.move_next until j.current_entry.catalog?
 
-        expect(j.current_catalog).to start_with(msg_text)
+        expect(j.current_catalog.downcase).to start_with(msg_text.downcase)
       end
     end
   end
