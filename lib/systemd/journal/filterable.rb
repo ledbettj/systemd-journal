@@ -38,7 +38,7 @@ module Systemd
       def add_filter(field, value)
         match = "#{field.to_s.upcase}=#{value}"
         rc = Native.sd_journal_add_match(@ptr, match, match.length)
-        raise JournalError.new(rc) if rc < 0
+        raise JournalError, rc if rc < 0
       end
 
       # Add a set of filters to the journal, such that only entries where the
@@ -71,7 +71,7 @@ module Systemd
       #   end
       def add_disjunction
         rc = Native.sd_journal_add_disjunction(@ptr)
-        raise JournalError.new(rc) if rc < 0
+        raise JournalError, rc if rc < 0
       end
 
       # Add an AND condition to the filter.  All previously added terms will be
@@ -89,7 +89,7 @@ module Systemd
       #   end
       def add_conjunction
         rc = Native.sd_journal_add_conjunction(@ptr)
-        raise JournalError.new(rc) if rc < 0
+        raise JournalError, rc if rc < 0
       end
 
       # Remove all filters and conjunctions/disjunctions.

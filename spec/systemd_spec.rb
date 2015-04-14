@@ -14,5 +14,4 @@ RSpec.describe Systemd do
       Systemd.boot_id
     end
   end
-
 end

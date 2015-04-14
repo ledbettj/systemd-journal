@@ -52,7 +52,7 @@ module Systemd
       opts[:files] = opts[:file] if opts[:file]
 
       rc = open_journal(ptr, opts, flags)
-      raise JournalError.new(rc) if rc < 0
+      raise JournalError, rc if rc < 0
 
       @ptr = ptr.read_pointer
       ObjectSpace.define_finalizer(self, self.class.finalize(@ptr))
@@ -84,7 +84,7 @@ module Systemd
       field   = field.to_s.upcase
       rc = Native.sd_journal_get_data(@ptr, field, out_ptr, len_ptr)
 
-      raise JournalError.new(rc) if rc < 0
+      raise JournalError, rc if rc < 0
 
       len = len_ptr.read_size_t
       string_from_out_ptr(out_ptr, len).split('=', 2).last
@@ -123,7 +123,7 @@ module Systemd
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
 
       rc = Native.sd_journal_get_catalog(@ptr, out_ptr)
-      raise JournalError.new(rc) if rc <  0
+      raise JournalError, rc if rc < 0
 
       Journal.read_and_free_outstr(out_ptr.read_pointer)
     end
@@ -135,7 +135,7 @@ module Systemd
         Systemd::Id128::Native::Id128.from_s(message_id),
         out_ptr
       )
-      raise JournalError.new(rc) if rc < 0
+      raise JournalError, rc if rc < 0
 
       read_and_free_outstr(out_ptr.read_pointer)
     end
@@ -152,7 +152,7 @@ module Systemd
       Native.sd_journal_restart_unique(@ptr)
 
       rc = Native.sd_journal_query_unique(@ptr, field.to_s.upcase)
-      raise JournalError.new(rc) if rc < 0
+      raise JournalError, rc if rc < 0
 
       while (kvpair = enumerate_helper(:sd_journal_enumerate_unique))
         results << kvpair.last
@@ -170,7 +170,7 @@ module Systemd
       size_ptr = FFI::MemoryPointer.new(:uint64)
       rc = Native.sd_journal_get_usage(@ptr, size_ptr)
 
-      raise JournalError.new(rc) if rc < 0
+      raise JournalError, rc if rc < 0
       size_ptr.read_uint64
     end
 
@@ -180,7 +180,7 @@ module Systemd
     def data_threshold
       size_ptr = FFI::MemoryPointer.new(:size_t, 1)
       if (rc = Native.sd_journal_get_data_threshold(@ptr, size_ptr)) < 0
-        raise JournalError.new(rc)
+        raise JournalError, rc
       end
 
       size_ptr.read_size_t
@@ -190,7 +190,7 @@ module Systemd
     # Fields longer than this will be truncated.
     def data_threshold=(threshold)
       if (rc = Native.sd_journal_set_data_threshold(@ptr, threshold)) < 0
-        raise JournalError.new(rc)
+        raise JournalError, rc
       end
     end
 
@@ -210,6 +210,11 @@ module Systemd
     def open_journal(ptr, opts, flags)
       @open_flags = 0
 
+      if opts[:container] && !Native.open_container?
+        raise ArgumentError,
+              'This native library version does not support opening containers'
+      end
+
       case
       when opts[:path]
         @open_target = "path:#{opts[:path]}"
@@ -219,7 +224,6 @@ module Systemd
         @open_target = "file#{files.one? ? '' : 's'}:#{files.join(',')}"
         Native.sd_journal_open_files(ptr, array_to_ptrs(files), 0)
       when opts[:container]
-        raise ArgumentError.new('This libsystemd-journal version does not support sd_journal_open_container') unless Native.open_container?
         @open_flags = flags
         @open_target = "container:#{opts[:container]}"
         Native.sd_journal_open_container(ptr, opts[:container], flags)
@@ -233,7 +237,7 @@ module Systemd
     def read_realtime
       out = FFI::MemoryPointer.new(:uint64, 1)
       rc = Native.sd_journal_get_realtime_usec(@ptr, out)
-      raise JournalError.new(rc) if rc < 0
+      raise JournalError, rc if rc < 0
 
       out.read_uint64
     end
@@ -243,7 +247,7 @@ module Systemd
       boot = FFI::MemoryPointer.new(Systemd::Id128::Native::Id128, 1)
 
       rc = Native.sd_journal_get_monotonic_usec(@ptr, out, boot)
-      raise JournalError.new(rc) if rc < 0
+      raise JournalError, rc if rc < 0
 
       [out.read_uint64, Systemd::Id128::Native::Id128.new(boot).to_s]
     end
@@ -261,7 +265,7 @@ module Systemd
       exclusive = [:path, :files, :container, :file]
       provided  = (opts.keys & exclusive)
       if provided.length > 1
-        raise ArgumentError.new("#{provided} are conflicting options")
+        raise ArgumentError, "#{provided} are conflicting options"
       end
     end
 
@@ -274,7 +278,7 @@ module Systemd
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
 
       rc = Native.send(enum_function, @ptr, out_ptr, len_ptr)
-      raise JournalError.new(rc) if rc < 0
+      raise JournalError, rc if rc < 0
       return nil if rc == 0
 
       len = len_ptr.read_size_t

@@ -17,8 +17,10 @@ RSpec.describe Systemd::Journal do
       expect { j.new(container: '', path: '/') }.to raise_error(ArgumentError)
     end
 
-    it 'throws an ArgumentError when attempting to open a container without support' do
-      allow(Systemd::Journal::Native).to receive(:open_container?).and_return(false)
+    it 'raises ArgumentError on attempt to open a container without support' do
+      allow(Systemd::Journal::Native).to receive(:open_container?)
+        .and_return(false)
+
       expect { j.new(container: 'test') }.to raise_error(ArgumentError)
     end
   end
@@ -359,13 +361,13 @@ RSpec.describe Systemd::Journal do
     end
 
     it 'can use select' do
-      pending "not available on JRUBY" if Systemd::Journal::IS_JRUBY
+      pending 'not available on JRUBY' if Systemd::Journal::IS_JRUBY
       expect(Systemd::Journal::Native).to_not receive(:sd_journal_wait)
       j.wait(1, select: true)
     end
 
     it 'ignores request to use select on JRuby' do
-      pending "not necessary on MRI" unless Systemd::Journal::IS_JRUBY
+      pending 'not necessary on MRI' unless Systemd::Journal::IS_JRUBY
       expect(Systemd::Journal::Native).to receive(:sd_journal_wait)
       j.wait(1, select: true)
     end
@@ -380,5 +382,4 @@ RSpec.describe Systemd::Journal do
       expect([true, false]).to include(j.wait_select_reliable?)
     end
   end
-
 end

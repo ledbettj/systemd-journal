@@ -37,7 +37,7 @@ module Systemd
     def self.read_id128(func)
       ptr = FFI::MemoryPointer.new(Native::Id128, 1)
       rc = Native.send(func, ptr)
-      raise JournalError.new(rc) if rc < 0
+      raise JournalError, rc if rc < 0
       Native::Id128.new(ptr).to_s
     end
 

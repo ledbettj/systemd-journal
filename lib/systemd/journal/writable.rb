@@ -48,7 +48,7 @@ module Systemd
             priority,
             !opts[:prefix].nil?
           )
-          raise JournalError.new(fd) if fd < 0
+          raise JournalError, fd if fd < 0
 
           IO.new(fd, File::WRONLY, encoding: Encoding::UTF_8)
         end
@@ -58,7 +58,7 @@ module Systemd
         # @param [String] message the text to prefix the error message with.
         def perror(message)
           rc = Native.sd_journal_perror(message)
-          raise JournalError.new(rc) if rc < 0
+          raise JournalError, rc if rc < 0
         end
 
         # write a simple message to the systemd journal.
@@ -67,7 +67,7 @@ module Systemd
         # @param [String] message the content of the message to write.
         def print(level, message)
           rc = Native.sd_journal_print(level, message)
-          raise JournalError.new(rc) if rc < 0
+          raise JournalError, rc if rc < 0
         end
 
         # write an event to the systemd journal.
@@ -79,7 +79,7 @@ module Systemd
           # add a null pointer to terminate the varargs
           items += [:string, nil]
           rc = Native.sd_journal_send(*items)
-          raise JournalError.new(rc) if rc < 0
+          raise JournalError, rc if rc < 0
         end
       end
     end
