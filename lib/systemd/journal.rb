@@ -45,13 +45,10 @@ module Systemd
     #     path: '/var/log/journal/5f5777e46c5f4131bd9b71cbed6b9abf'
     #   )
     def initialize(opts = {})
-      validate_options!(opts)
+      open_type, flags = validate_options!(opts)
+      ptr = FFI::MemoryPointer.new(:pointer, 1)
 
-      flags = opts[:flags] || 0
-      ptr   = FFI::MemoryPointer.new(:pointer, 1)
-      opts[:files] = opts[:file] if opts[:file]
-
-      rc = open_journal(ptr, opts, flags)
+      rc = open_journal(open_type, ptr, opts, flags)
       raise JournalError, rc if rc < 0
 
       @ptr = ptr.read_pointer
@@ -207,30 +204,25 @@ module Systemd
 
     private
 
-    def open_journal(ptr, opts, flags)
-      @open_flags = 0
+    def open_journal(type, ptr, opts, flags)
+      @open_flags = flags
 
-      if opts[:container] && !Native.open_container?
-        raise ArgumentError,
-              'This native library version does not support opening containers'
-      end
-
-      case
-      when opts[:path]
+      case type
+      when :path
         @open_target = "path:#{opts[:path]}"
         Native.sd_journal_open_directory(ptr, opts[:path], 0)
-      when opts[:files]
-        files = Array(opts[:files])
+      when :files, :file
+        files = Array(opts[type])
         @open_target = "file#{files.one? ? '' : 's'}:#{files.join(',')}"
         Native.sd_journal_open_files(ptr, array_to_ptrs(files), 0)
-      when opts[:container]
-        @open_flags = flags
+      when :container
         @open_target = "container:#{opts[:container]}"
         Native.sd_journal_open_container(ptr, opts[:container], flags)
-      else
-        @open_flags = flags
+      when :local
         @open_target = 'journal:local'
         Native.sd_journal_open(ptr, flags)
+      else
+        raise ArgumentError, "Unknown open type: #{type}"
       end
     end
 
@@ -263,10 +255,21 @@ module Systemd
 
     def validate_options!(opts)
       exclusive = [:path, :files, :container, :file]
-      provided  = (opts.keys & exclusive)
-      if provided.length > 1
-        raise ArgumentError, "#{provided} are conflicting options"
+      given = (opts.keys & exclusive)
+
+      raise ArgumentError, "conflicting options: #{given}" if given.length > 1
+
+      type = given.first || :local
+
+      if type == :container && !Native.open_container?
+        raise ArgumentError,
+              'This native library version does not support opening containers'
       end
+
+      flags = opts[:flags] if [:local, :container].include?(type)
+      flags ||= 0
+
+      [type, flags]
     end
 
     def self.finalize(ptr)
