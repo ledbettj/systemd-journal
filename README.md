@@ -136,5 +136,5 @@ If you run into problems or have questions, please open an
 2. Create your feature branch
 3. Commit your changes
 4. Push to the branch
-5. Create new Pull Request, targeting the __develop__ branch.
+5. Create new Pull Request, targeting the __master__ branch.
 6. Wipe hands on pants, you're done!
