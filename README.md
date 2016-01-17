@@ -15,8 +15,15 @@ And then execute:
 
     bundle install
 
-Or just `gem install systemd-journal` if you're not into that whole bundler
-thing.
+If you have trust issues, fear not:
+
+    wget https://github.com/ledbettj/systemd-journal/blob/master/certs/john@throttle.io.pem
+    gem cert --add john@throttle.io.pem
+
+You can then verify the signature at install time with either `gem` or `bundler`:
+
+    gem install systemd-journal -P HighSecurity
+    bundle install --trust-policy HighSecurity
 
 ## Dependencies
 

@@ -9,18 +9,25 @@ Gem::Specification.new do |gem|
   gem.license       = 'MIT'
   gem.authors       = ['John Ledbetter', 'Daniel Mack']
   gem.email         = ['john@throttle.io']
-  gem.description   = %q{Provides the ability to navigate and read entries from the systemd journal in ruby, as well as write events to the journal.}
-  gem.summary       = %q{Ruby bindings to libsystemd-journal}
+  gem.description   = 'Provides the ability to navigate and read entries from the systemd journal in ruby, as well as write events to the journal.'
+  gem.summary       = 'Ruby bindings to libsystemd-journal'
   gem.homepage      = 'https://github.com/ledbettj/systemd-journal'
 
+  gem.cert_chain    = Dir['certs/*']
+
+  if $PROGRAM_NAME.end_with?('gem')
+    gem.signing_key = ENV['GEM_SIGNING_KEY']
+    raise ArgumentError, 'Please set GEM_SIGNING_KEY' if gem.signing_key.nil?
+  end
+
   gem.files         = `git ls-files`.split($/)
-  gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
+  gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ['lib']
 
   gem.required_ruby_version = '>= 1.9.3'
 
-  gem.add_runtime_dependency 'ffi', '~> 1.9.0'
+  gem.add_runtime_dependency 'ffi', '~> 1.9'
 
   gem.add_development_dependency 'rspec',     '~> 3.4'
   gem.add_development_dependency 'simplecov', '~> 0.9'
