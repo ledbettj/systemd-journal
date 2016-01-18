@@ -1,4 +1,4 @@
-Copyright (c) 2013 John Ledbetter
+Copyright (c) 2013-2016 John Ledbetter
 
 MIT License
 

@@ -12,7 +12,7 @@ class FFI::MemoryPointer
       method_defined?("read_#{name}") if t == type
     end
 
-    raise RuntimeError, "Unable to patch in reader/writer for #{which}" if type.nil?
+    raise "Unable to patch in reader/writer for #{which}" if type.nil?
 
     alias_method "read_#{which}", "read_#{type}"
     alias_method "write_#{which}", "write_#{type}"

@@ -11,10 +11,10 @@ module Systemd
       ffi_lib %w( libsystemd.so.0         libsystemd.so
                   libsystemd-journal.so.0 libsystemd-journal.so)
 
-      @@has_open_container = true
+      @has_open_container = true
 
       def self.open_container?
-        @@has_open_container
+        @has_open_container
       end
 
       # setup/teardown
@@ -28,7 +28,7 @@ module Systemd
       begin
         attach_function :sd_journal_open_container, [:pointer, :string, :int], :int
       rescue FFI::NotFoundError
-        @@has_open_container = false
+        @has_open_container = false
       end
 
       # navigation

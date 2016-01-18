@@ -15,8 +15,15 @@ And then execute:
 
     bundle install
 
-Or just `gem install systemd-journal` if you're not into that whole bundler
-thing.
+If you have trust issues, fear not:
+
+    wget https://github.com/ledbettj/systemd-journal/blob/master/certs/john@throttle.io.pem
+    gem cert --add john@throttle.io.pem
+
+You can then verify the signature at install time with either `gem` or `bundler`:
+
+    gem install systemd-journal -P HighSecurity
+    bundle install --trust-policy HighSecurity
 
 ## Dependencies
 
@@ -34,6 +41,7 @@ Print all messages as they occur:
     j = Systemd::Journal.new
     j.seek(:tail)
 
+    # watch() does not return
     j.watch do |entry|
       puts entry.message
     end
@@ -88,12 +96,43 @@ Accessing the catalog:
     # or if you have a message id:
     puts Systemd::Journal.catalog_for(j.current_entry.message_id)
 
+Writing to the journal:
+
+    # write a simple message
+    Systemd::Journal.print(Systemd::Journal::LOG_INFO, 'Something happened')
+
+    # write custom fields
+    Systemd::Journal.message(
+      message: 'Something bad happened',
+      priority: Systemd::Journal::LOG_ERR,
+      my_custom_field: 'foo was nil!'
+    )
+
 See the documentation for more examples.
+
+## Troubleshooting
+
+### I get 'Cannot assign requested address' when trying to read an entry!
+
+After calling one of the below, the Journal read pointer might not point at
+a valid entry:
+
+    Journal#filter
+    Journal#clear_filters
+    Journal#seek(:head)
+    Journal#seek(:tail)
+
+The solution is to always call one of `move`, `move_next`, `move_previous` and
+friends before reading after issuing one of the above calls.
 
 ## Issues?
 
-This gem has been tested primarily on Arch Linux running systemd 208.  Please
-let me know if you have issues on other distributions.
+This gem has been tested primarily on MRI and Arch Linux running systemd version
+208-218.  Please let me know if you have issues with other versions or
+distributions.
+
+The gem will run under JRuby, although some features which rely on native file
+descriptor support will not work.
 
 If you run into problems or have questions, please open an
 [Issue](https://github.com/ledbettj/systemd-journal/issues) or Pull Request.
@@ -104,5 +143,5 @@ If you run into problems or have questions, please open an
 2. Create your feature branch
 3. Commit your changes
 4. Push to the branch
-5. Create new Pull Request, targeting the __develop__ branch.
+5. Create new Pull Request, targeting the __master__ branch.
 6. Wipe hands on pants, you're done!

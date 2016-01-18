@@ -7,7 +7,7 @@ module Systemd
       def cursor
         out_ptr = FFI::MemoryPointer.new(:pointer, 1)
         if (rc = Native.sd_journal_get_cursor(@ptr, out_ptr)) < 0
-          raise JournalError.new(rc)
+          raise JournalError, rc
         end
 
         Journal.read_and_free_outstr(out_ptr.read_pointer)
@@ -20,7 +20,7 @@ module Systemd
       # provided cursor, False otherwise.
       def cursor?(c)
         if (rc = Native.sd_journal_test_cursor(@ptr, c)) < 0
-          raise JournalError.new(rc)
+          raise JournalError, rc
         end
 
         rc > 0
@@ -41,7 +41,7 @@ module Systemd
       #   that the pointer has reached the end of the journal.
       def move_next
         rc = Native.sd_journal_next(@ptr)
-        raise JournalError.new(rc) if rc < 0
+        raise JournalError, rc if rc < 0
         rc > 0
       end
 
@@ -51,7 +51,7 @@ module Systemd
       #   pointer has reached the end of the journal.
       def move_next_skip(amount)
         rc = Native.sd_journal_next_skip(@ptr, amount)
-        raise JournalError.new(rc) if rc < 0
+        raise JournalError, rc if rc < 0
         rc
       end
 
@@ -61,7 +61,7 @@ module Systemd
       #   indicating that the pointer has reached the beginning of the journal.
       def move_previous
         rc = Native.sd_journal_previous(@ptr)
-        raise JournalError.new(rc) if rc < 0
+        raise JournalError, rc if rc < 0
         rc > 0
       end
 
@@ -71,7 +71,7 @@ module Systemd
       #   read pointer has reached the beginning of the journal.
       def move_previous_skip(amount)
         rc = Native.sd_journal_previous_skip(@ptr, amount)
-        raise JournalError.new(rc) if rc < 0
+        raise JournalError, rc if rc < 0
         rc
       end
 
@@ -94,16 +94,16 @@ module Systemd
                Native.sd_journal_seek_tail(@ptr)
              when where.is_a?(Time)
                Native.sd_journal_seek_realtime_usec(
-                @ptr,
-                where.to_i * 1_000_000
+                 @ptr,
+                 where.to_i * 1_000_000
                )
              when where.is_a?(String)
                Native.sd_journal_seek_cursor(@ptr, where)
              else
-               raise ArgumentError.new("Unknown seek type: #{where.class}")
+               raise ArgumentError, "Unknown seek type: #{where.class}"
              end
 
-        raise JournalError.new(rc) if rc < 0
+        raise JournalError, rc if rc < 0
 
         true
       end

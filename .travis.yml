@@ -1,9 +1,10 @@
 language: ruby
 rvm:
-  - 2.1.2
+  - 2.3.0
   - 1.9.3
   - jruby-19mode
-
+before_install:
+  - gem install bundler
 before_script:
   - export PREV_DIR=$(pwd)
   - sudo apt-get update -qq

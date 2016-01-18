@@ -2,7 +2,7 @@ SignalException:
   Enabled: false
 
 RaiseArgs:
-  Enabled: false
+  Enabled: true
 
 SpaceInsideBlockBraces:
   Enabled: true

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 RSpec.describe Systemd::Id128 do
-  subject(:id128){ Systemd::Id128 }
+  subject(:id128) { Systemd::Id128 }
 
   describe 'machine_id' do
     it 'should be a 128 bit hexadecimal string' do
