@@ -12,9 +12,14 @@ module Systemd
                   libsystemd-journal.so.0 libsystemd-journal.so)
 
       @has_open_container = true
+      @at_least_v229      = true
 
       def self.open_container?
         @has_open_container
+      end
+
+      def self.at_least_v229?
+        @at_least_v229
       end
 
       # setup/teardown
@@ -24,11 +29,21 @@ module Systemd
 
       attach_function :sd_journal_open_files,     [:pointer, :pointer, :int], :int
 
-      # not available in 208
+      # Added in v209
       begin
         attach_function :sd_journal_open_container, [:pointer, :string, :int], :int
       rescue FFI::NotFoundError
         @has_open_container = false
+      end
+
+      # Added in v229
+      begin
+        attach_function :sd_journal_has_runtime_files,    [:pointer], :int
+        attach_function :sd_journal_has_persistent_files, [:pointer], :int
+        attach_function :sd_journal_enumerate_fields,     [:pointer, :pointer], :int
+        attach_function :sd_journal_restart_fields,       [:pointer], :int
+      rescue FFI::NotFoundError
+        @at_least_v229 = false
       end
 
       # navigation

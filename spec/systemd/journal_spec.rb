@@ -382,4 +382,28 @@ RSpec.describe Systemd::Journal do
       expect([true, false]).to include(j.wait_select_reliable?)
     end
   end
+
+  describe 'runtime_files?' do
+    it 'should raise an exception if libsystemd does not have this function' do
+      allow(Systemd::Journal::Native).to receive(:at_least_v229?).and_return(false)
+      expect { j.runtime_files? }.to raise_error(ArgumentError)
+    end
+
+    it 'should not raise an exception and return a boolean' do
+      expect { puts j.runtime_files? }.to_not raise_error
+      expect([true, false]).to include(j.runtime_files?)
+    end
+  end
+
+  describe 'persistent_files' do
+    it 'should raise an exception if libsystemd does not have this function' do
+      expect(Systemd::Journal::Native).to receive(:at_least_v229?).and_return(false)
+      expect { j.persistent_files? }.to raise_error(ArgumentError)
+    end
+
+    it 'should not raise an exception and return a boolean' do
+      expect { puts j.persistent_files? }.to_not raise_error
+      expect([true, false]).to include(j.persistent_files?)
+    end
+  end
 end
