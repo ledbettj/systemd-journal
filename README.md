@@ -128,7 +128,7 @@ friends before reading after issuing one of the above calls.
 ## Issues?
 
 This gem has been tested primarily on MRI and Arch Linux running systemd version
-208-218.  Please let me know if you have issues with other versions or
+208 and up.  Please let me know if you have issues with other versions or
 distributions.
 
 The gem will run under JRuby, although some features which rely on native file
