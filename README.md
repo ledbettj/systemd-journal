@@ -109,7 +109,7 @@ Accessing the catalog:
 ```ruby
 j = Systemd::Journal.new
 j.move_next
-j.move_next while !j.current_entry.catalog?
+j.move_next until j.current_entry.catalog?
 
 puts j.current_entry.catalog
 # or if you have a message id:
