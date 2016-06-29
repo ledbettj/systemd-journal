@@ -297,7 +297,7 @@ module Systemd
     # frees the char*, and returns the ruby string.
     def self.read_and_free_outstr(ptr)
       str = ptr.read_string
-      LibC.free(ptr)
+      ptr.free()
       str
     end
   end
