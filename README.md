@@ -22,7 +22,7 @@ bundle install
 If you have trust issues, fear not:
 
 ```sh
-wget https://github.com/ledbettj/systemd-journal/blob/master/certs/john@throttle.io.pem
+wget https://raw.githubusercontent.com/ledbettj/systemd-journal/master/certs/john@throttle.io.pem
 gem cert --add john@throttle.io.pem
 ```
 
