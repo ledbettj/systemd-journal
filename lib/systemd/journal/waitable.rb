@@ -20,7 +20,7 @@ module Systemd
           wait_select(timeout_usec)
         else
           rc = Native.sd_journal_wait(@ptr, timeout_usec)
-          raise JournalError, rc if rc.is_a?(Fixnum) && rc < 0
+          raise JournalError, rc if rc.is_a?(Integer) && rc < 0
           rc == :nop ? nil : rc
         end
       end
@@ -67,7 +67,7 @@ module Systemd
 
       def reason_for_wakeup
         rc = Native.sd_journal_process(@ptr)
-        raise JournalError, rc if rc.is_a?(Fixnum) && rc < 0
+        raise JournalError, rc if rc.is_a?(Integer) && rc < 0
         rc == :nop ? nil : rc
       end
     end
