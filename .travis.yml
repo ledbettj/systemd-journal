@@ -11,7 +11,7 @@ before_script:
   - git clone git://github.com/systemd/systemd.git /tmp/systemd
   - >
       cd /tmp/systemd/  &&
-      git checkout v209 &&
+      git checkout v229 &&
       sh autogen.sh     &&
       ./configure --disable-apparmor --disable-audit --disable-selinux
       --disable-machined --disable-logind --disable-timedated
