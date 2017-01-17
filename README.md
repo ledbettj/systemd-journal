@@ -51,6 +51,7 @@ Print all messages as they occur:
 ```ruby
 j = Systemd::Journal.new
 j.seek(:tail)
+j.move_previous
 
 # watch() does not return
 j.watch do |entry|
@@ -81,9 +82,9 @@ c = j.cursor    # get a reference to this entry
 j.move(-5)      # move back 5 entries
 j.seek(c)       # move to the saved cursor
 j.cursor?(c)    # verify that we're at the correct entry
-j.seek(:tail)   # move to end of the journal
-j.move_previous # move back
-j.move_next     # move forward
+j.seek(:tail)   # move past the end of the journal
+j.move_previous # move to last entry in journal
+j.move_next     # move forward (fails since we're at the end)
 
 j.current_entry # get the entry we're currently positioned at
 
@@ -96,6 +97,7 @@ Waiting for things to happen:
 ```ruby
 j = Systemd::Journal.new
 j.seek(:tail)
+j.move_previous
 # wait up to one second for something to happen
 if j.wait(1_000_000)
   puts 'something changed!'
@@ -145,7 +147,8 @@ a valid entry:
     Journal#seek(:tail)
 
 The solution is to always call one of `move`, `move_next`, `move_previous` and
-friends before reading after issuing one of the above calls.
+friends before reading after issuing one of the above calls.  For most functions,
+call `move_next`.  For `seek(:tail)`, call `move_previous`.
 
 ## Issues?
 

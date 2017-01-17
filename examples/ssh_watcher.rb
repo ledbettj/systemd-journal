@@ -10,6 +10,7 @@ class SSHWatcher
   def run
     @journal.filter(_exe: '/usr/bin/sshd')
     @journal.seek(:tail)
+    @journal.move_previous
     @journal.watch{ |entry| process_event(entry) }
   end
 

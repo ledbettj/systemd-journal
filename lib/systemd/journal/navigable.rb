@@ -78,6 +78,9 @@ module Systemd
       # Seek to a position in the journal.
       # Note: after seeking, you must call {#move_next} or {#move_previous}
       #   before you can call {#read_field} or {#current_entry}.
+      #   When calling `seek(:tail)` the read pointer is positioned _after_
+      #   the last entry in the journal -- thus you should use `move_previous`.
+      #   Otherwise, use `move_next`.
       #
       # @param [Symbol, Time] whence one of :head, :tail, or a Time instance.
       #   `:head` (or `:start`) will seek to the beginning of the journal.
@@ -86,6 +89,11 @@ module Systemd
       #   time. When a String is provided, assume it is a cursor from {#cursor}
       #   and seek to that entry.
       # @return [True]
+      # @example Read last journal entry
+      #   j = Systemd::Joural.new
+      #   j.seek(:tail)
+      #   j.move_previous
+      #   puts j.current_entry
       def seek(where)
         rc = case
              when [:head, :start].include?(where)
