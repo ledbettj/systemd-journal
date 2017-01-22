@@ -168,7 +168,7 @@ module Systemd
       rc = Native.sd_journal_get_usage(@ptr, size_ptr)
 
       raise JournalError, rc if rc < 0
-      size_ptr.read_uint64
+      size_ptr.read_ulong_long
     end
 
     # Get the maximum length of a data field that will be returned.
@@ -231,7 +231,7 @@ module Systemd
       rc = Native.sd_journal_get_realtime_usec(@ptr, out)
       raise JournalError, rc if rc < 0
 
-      out.read_uint64
+      out.read_ulong_long
     end
 
     def read_monotonic
@@ -241,7 +241,7 @@ module Systemd
       rc = Native.sd_journal_get_monotonic_usec(@ptr, out, boot)
       raise JournalError, rc if rc < 0
 
-      [out.read_uint64, Systemd::Id128::Native::Id128.new(boot).to_s]
+      [out.read_ulong_long, Systemd::Id128::Native::Id128.new(boot).to_s]
     end
 
     def array_to_ptrs(strings)
