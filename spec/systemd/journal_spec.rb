@@ -25,6 +25,34 @@ RSpec.describe Systemd::Journal do
     end
   end
 
+  describe 'close' do
+    it 'closes the underlying file' do
+      expect(Systemd::Journal::Native).to receive(:sd_journal_close)
+        .and_call_original
+
+      j.close
+    end
+
+    it 'unregisters the finalizer' do
+      expect(ObjectSpace).to receive(:undefine_finalizer)
+        .with(j)
+        .and_call_original
+
+      j.close
+    end
+
+    it 'does not fail if called more than once' do
+      j.close
+      expect { j.close }.to_not raise_error
+    end
+
+    it 'marks the journal as closed' do
+      expect(j).to_not be_closed
+      j.close
+      expect(j).to be_closed
+    end
+  end
+
   describe 'query_unique' do
     it 'throws a JournalError on invalid return code' do
       expect(Systemd::Journal::Native).to receive(:sd_journal_enumerate_unique)
