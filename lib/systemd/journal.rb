@@ -191,6 +191,22 @@ module Systemd
       end
     end
 
+    # Explicitly close the underlying Journal file.
+    # Once this is done, any operations on the instance will fail and raise an
+    # exception.
+    def close
+      return if @ptr.nil?
+
+      ObjectSpace.undefine_finalizer(self)
+      Native.sd_journal_close(@ptr)
+
+      @ptr = nil
+    end
+
+    def closed?
+      @ptr.nil?
+    end
+
     # @private
     def inspect
       format(
