@@ -74,7 +74,8 @@ module Systemd
         # @param [Hash] contents the set of key-value pairs defining the event.
         def message(contents)
           items = contents.flat_map do |k, v|
-            [:string, "#{k.to_s.upcase}=#{v}"]
+            value = v.to_s.gsub('%', '%%')
+            [:string, "#{k.to_s.upcase}=#{value}"]
           end
           # add a null pointer to terminate the varargs
           items += [:string, nil]
