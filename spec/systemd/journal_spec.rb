@@ -410,4 +410,14 @@ RSpec.describe Systemd::Journal do
       expect([true, false]).to include(j.wait_select_reliable?)
     end
   end
+
+  describe 'message' do
+    it 'escapes percent signs in messages' do
+      expect(Systemd::Journal::Native).to receive(:sd_journal_send)
+        .with(:string, 'MESSAGE=hello %% world %%', :string, nil)
+        .and_return(0)
+
+      Systemd::Journal.message(message: 'hello % world %')
+    end
+  end
 end
