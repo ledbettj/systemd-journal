@@ -31,7 +31,7 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency 'rspec',     '~> 3.4'
   gem.add_development_dependency 'simplecov', '~> 0.9'
-  gem.add_development_dependency 'rubocop',   '~> 0.26'
+  gem.add_development_dependency 'rubocop',   '~> 0.26' unless ENV['RUBOCOP'] == 'false'
   gem.add_development_dependency 'rake',      '~> 10.3'
   gem.add_development_dependency 'yard',      '~> 0.8'
   gem.add_development_dependency 'pry',       '~> 0.10'
