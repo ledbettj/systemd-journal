@@ -52,6 +52,7 @@ module Systemd
       raise JournalError, rc if rc < 0
 
       @ptr = ptr.read_pointer
+      file_descriptor
       ObjectSpace.define_finalizer(self, self.class.finalize(@ptr))
     end
 
