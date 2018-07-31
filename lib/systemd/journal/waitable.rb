@@ -61,7 +61,7 @@ module Systemd
 
       def file_descriptor
         fd = Native.sd_journal_get_fd(@ptr)
-        raise JournalError, rc if fd < 0
+        raise JournalError, fd if fd < 0
         fd
       end
 
