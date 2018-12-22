@@ -57,6 +57,7 @@ j.move_previous
 j.watch do |entry|
   puts entry.message
 end
+j.close # close files when done
 ```
 
 Filter events and iterate:
@@ -99,11 +100,10 @@ j = Systemd::Journal.new
 j.seek(:tail)
 j.move_previous
 # wait up to one second for something to happen
-if j.wait(1_000_000)
-  puts 'something changed!'
+puts 'something changed!' if j.wait(1_000_000)
+  
 # same as above, but can be interrupted with Control+C.
-if j.wait(1_000_000, select: true)
-  puts 'something changed!'
+puts 'something changed!' if j.wait(1_000_000, select: true)
 ```
 
 Accessing the catalog:
