@@ -49,15 +49,15 @@ require 'systemd/journal'
 Print all messages as they occur:
 
 ```ruby
-j = Systemd::Journal.new
-j.seek(:tail)
-j.move_previous
-
-# watch() does not return
-j.watch do |entry|
-  puts entry.message
+Systemd::Journal.open do |j|
+  j.seek(:tail)
+  j.move_previous
+  
+  # watch() does not return
+  j.watch do |entry|
+    puts entry.message
+  end
 end
-j.close # close files when done
 ```
 
 Filter events and iterate:
@@ -70,6 +70,7 @@ j.filter(priority: 6, _exe: '/usr/bin/sshd')
 j.each do |entry|
   puts entry.message
 end
+j.close # close open files
 ```
 
 Moving around the journal:
