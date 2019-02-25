@@ -8,6 +8,24 @@ RSpec.describe Systemd::Journal do
     end
   end
 
+  describe 'open' do
+    it 'creates and closes' do
+      expect(Systemd::Journal::Native).to receive(:sd_journal_close)
+        .and_call_original
+
+      result = j.open { 1 }
+      expect(result).to eq 1
+    end
+
+    it 'raises original exception when creating journal fails' do
+      expect(Systemd::Journal::Native).to_not receive(:sd_journal_close)
+
+      expect do
+        j.open(file: 1, path: 2, files: 3) { 1 }
+      end.to raise_error(ArgumentError)
+    end
+  end
+
   describe 'initialize' do
     subject(:j) { Systemd::Journal }
 
