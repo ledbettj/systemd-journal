@@ -48,7 +48,7 @@ module Systemd
       open_type, flags = validate_options!(opts)
       ptr = FFI::MemoryPointer.new(:pointer, 1)
 
-      @finalize = (flags.key?(:finalize) ? flags.delete(:finalize) : true)
+      @finalize = (opts.key?(:finalize) ? opts.delete(:finalize) : true)
       rc = open_journal(open_type, ptr, opts, flags)
       raise JournalError, rc if rc < 0
 
