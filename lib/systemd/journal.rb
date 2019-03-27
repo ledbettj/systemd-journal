@@ -200,6 +200,30 @@ module Systemd
       end
     end
 
+    def runtime_files?
+      unless Native.feature_level?(229)
+        raise ArgumentError, 'This version of libsystemd does not support this functionality'
+      end
+
+      if (rc = Native.sd_journal_has_runtime_files(@ptr)) < 0
+        raise JournalError, rc
+      end
+
+      rc > 0
+    end
+
+    def persistent_files?
+      unless Native.feature_level?(229)
+        raise ArgumentError, 'This version of libsystemd does not support this functionality'
+      end
+
+      if (rc = Native.sd_journal_has_persistent_files(@ptr)) < 0
+        raise JournalError, rc
+      end
+
+      rc > 0
+    end
+
     # Explicitly close the underlying Journal file.
     # Once this is done, any operations on the instance will fail and raise an
     # exception.
@@ -286,7 +310,7 @@ module Systemd
 
       type = given.first || :local
 
-      if type == :container && !Native.open_container?
+      if type == :container && !Native.feature_level?(209)
         raise ArgumentError,
               'This native library version does not support opening containers'
       end
