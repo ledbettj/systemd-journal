@@ -13,7 +13,7 @@ RSpec.describe Systemd::Journal do
       expect(Systemd::Journal::Native).to receive(:sd_journal_close)
         .and_call_original
 
-      result = j.open { 1 }
+      result = Systemd::Journal.open { 1 }
       expect(result).to eq 1
     end
 
@@ -21,7 +21,7 @@ RSpec.describe Systemd::Journal do
       expect(Systemd::Journal::Native).to_not receive(:sd_journal_close)
 
       expect do
-        j.open(file: 1, path: 2, files: 3) { 1 }
+        Systemd::Journal.open(file: 1, path: 2, files: 3) { 1 }
       end.to raise_error(ArgumentError)
     end
   end
