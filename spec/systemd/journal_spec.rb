@@ -35,6 +35,18 @@ RSpec.describe Systemd::Journal do
       expect { j.new(container: '', path: '/') }.to raise_error(ArgumentError)
     end
 
+    it 'can open files via file descriptor' do
+      File.open(journal_file, 'r') do |f|
+        expect { j.new(files_fd: f.fileno) }.to_not raise_error
+      end
+    end
+
+    it 'can open paths via file descriptor' do
+      File.open(File.dirname(journal_file), 'r') do |f|
+        expect { j.new(path_fd: f.fileno) }.to_not raise_error
+      end
+    end
+
     it 'raises ArgumentError on attempt to open a container without support' do
       allow(Systemd::Journal::Native).to receive(:feature_level?)
         .with(209).and_return(false)
