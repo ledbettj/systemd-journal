@@ -1,4 +1,4 @@
-FROM centos:7
+FROM centos:8
 
 RUN yum install -y make gcc-c++ systemd ruby ruby-devel rubygem-bundler git
 
