@@ -151,6 +151,14 @@ The solution is to always call one of `move`, `move_next`, `move_previous` and
 friends before reading after issuing one of the above calls.  For most functions,
 call `move_next`.  For `seek(:tail)`, call `move_previous`.
 
+### I get a segfault pointing at Native.sd_journal_get_fd
+
+This is caused by a bug in libsystemd v245 (and maybe earlier) which cannot be
+solved in this gem, sadly.  It's fixed upstream in [this commit](https://github.com/systemd/systemd/commit/2b6df46d21abe8a8b7481e420588a9a129699cf9), which you can ask your distribution to backport if
+necessary until v246 is released.
+
+In ArchLinux, this patch is applied in systemd-libs 245.6-2.
+
 ## Issues?
 
 This gem has been tested primarily on MRI and Arch Linux running systemd version
