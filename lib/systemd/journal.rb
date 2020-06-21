@@ -33,9 +33,14 @@ module Systemd
     # @option opts [String] :path if provided, open the journal files living
     #   in the provided directory only.  Any provided flags will be ignored
     #   since sd_journal_open_directory does not currently accept any flags.
+    # @option opts [Integer] :path_fd if provided, open the journal files living
+    #   in the provided file descriptor's directory only.
     # @option opts [Array] :files if provided, open the provided journal files
     #   only.  Any provided flags will be ignored since sd_journal_open_files
     #   does not currently accept any flags.
+    # @option opts [Array] :files_fd if provided, open the provided journal
+    #   file descriptors only.  Any provided flags will be ignored since
+    #   sd_journal_open_files_fd does not currently accept any flags.
     # @option opts [String] :container if provided, open the journal files from
     #   the container with the provided machine name only.
     # @example Read only system journal entries
@@ -200,6 +205,30 @@ module Systemd
       end
     end
 
+    def runtime_files?
+      unless Native.feature_level?(229)
+        raise ArgumentError, 'This version of libsystemd does not support this functionality'
+      end
+
+      if (rc = Native.sd_journal_has_runtime_files(@ptr)) < 0
+        raise JournalError, rc
+      end
+
+      rc > 0
+    end
+
+    def persistent_files?
+      unless Native.feature_level?(229)
+        raise ArgumentError, 'This version of libsystemd does not support this functionality'
+      end
+
+      if (rc = Native.sd_journal_has_persistent_files(@ptr)) < 0
+        raise JournalError, rc
+      end
+
+      rc > 0
+    end
+
     # Explicitly close the underlying Journal file.
     # Once this is done, any operations on the instance will fail and raise an
     # exception.
@@ -235,11 +264,18 @@ module Systemd
       case type
       when :path
         @open_target = "path:#{opts[:path]}"
-        Native.sd_journal_open_directory(ptr, opts[:path], 0)
+        Native.sd_journal_open_directory(ptr, opts[:path], flags)
+      when :path_fd
+        @open_target = "path_fd:#{opts[:path]}"
+        Native.sd_journal_open_directory_fd(ptr, opts[:path_fd], flags)
       when :files, :file
         files = Array(opts[type])
         @open_target = "file#{files.one? ? '' : 's'}:#{files.join(',')}"
         Native.sd_journal_open_files(ptr, array_to_ptrs(files), 0)
+      when :files_fd
+        files = Array(opts[type])
+        @open_target = "files_fd:#{files.join(',')}"
+        Native.sd_journal_open_files_fd(ptr, files, 0)
       when :container
         @open_target = "container:#{opts[:container]}"
         Native.sd_journal_open_container(ptr, opts[:container], flags)
@@ -286,7 +322,7 @@ module Systemd
 
       type = given.first || :local
 
-      if type == :container && !Native.open_container?
+      if type == :container && !Native.feature_level?(209)
         raise ArgumentError,
               'This native library version does not support opening containers'
       end

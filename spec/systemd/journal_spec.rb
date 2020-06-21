@@ -35,9 +35,21 @@ RSpec.describe Systemd::Journal do
       expect { j.new(container: '', path: '/') }.to raise_error(ArgumentError)
     end
 
+    it 'can open files via file descriptor' do
+      File.open(journal_file, 'r') do |f|
+        expect { j.new(files_fd: f.fileno) }.to_not raise_error
+      end
+    end
+
+    it 'can open paths via file descriptor' do
+      File.open(File.dirname(journal_file), 'r') do |f|
+        expect { j.new(path_fd: f.fileno) }.to_not raise_error
+      end
+    end
+
     it 'raises ArgumentError on attempt to open a container without support' do
-      allow(Systemd::Journal::Native).to receive(:open_container?)
-        .and_return(false)
+      allow(Systemd::Journal::Native).to receive(:feature_level?)
+        .with(209).and_return(false)
 
       expect { j.new(container: 'test') }.to raise_error(ArgumentError)
     end
@@ -436,6 +448,34 @@ RSpec.describe Systemd::Journal do
         .and_return(0)
 
       Systemd::Journal.message(message: 'hello % world %')
+    end
+  end
+
+  describe 'runtime_files?' do
+    it 'should raise an exception if libsystemd does not have this function' do
+      allow(Systemd::Journal::Native).to receive(:feature_level?)
+        .with(229).and_return(false)
+      expect { j.runtime_files? }.to raise_error(ArgumentError)
+    end
+
+    it 'should not raise an exception and return a boolean' do
+      rc = nil
+      expect { rc = j.runtime_files? }.to_not raise_error
+      expect([false, true]).to include(rc)
+    end
+  end
+
+  describe 'persistent_files' do
+    it 'should raise an exception if libsystemd does not have this function' do
+      allow(Systemd::Journal::Native).to receive(:feature_level?)
+        .with(229).and_return(false)
+      expect { j.persistent_files? }.to raise_error(ArgumentError)
+    end
+
+    it 'should not raise an exception and return a boolean' do
+      rc = nil
+      expect { rc = j.persistent_files? }.to_not raise_error
+      expect([false, true]).to include(rc)
     end
   end
 end

@@ -11,10 +11,39 @@ module Systemd
       ffi_lib %w( libsystemd.so.0         libsystemd.so
                   libsystemd-journal.so.0 libsystemd-journal.so)
 
-      @has_open_container = true
+      @feature_level = 230
 
-      def self.open_container?
-        @has_open_container
+      def self.feature_level
+        @feature_level
+      end
+
+      def self.feature_level?(level)
+        feature_level >= level
+      end
+
+      # Added in v230
+      begin
+        attach_function :sd_journal_open_directory_fd, [:pointer, :int, :int], :int
+        attach_function :sd_journal_open_files_fd,     [:pointer, :pointer, :uint, :int], :int
+      rescue FFI::NotFoundError
+        @feature_level = 229
+      end
+
+      # Added in v229
+      begin
+        attach_function :sd_journal_has_runtime_files,    [:pointer], :int
+        attach_function :sd_journal_has_persistent_files, [:pointer], :int
+        attach_function :sd_journal_enumerate_fields,     [:pointer, :pointer], :int
+        attach_function :sd_journal_restart_fields,       [:pointer], :int
+      rescue FFI::NotFoundError
+        @feature_level = 209
+      end
+
+      # Added in v209
+      begin
+        attach_function :sd_journal_open_container, [:pointer, :string, :int], :int
+      rescue FFI::NotFoundError
+        @feature_level = 208
       end
 
       # setup/teardown
@@ -23,13 +52,6 @@ module Systemd
       attach_function :sd_journal_close,          [:pointer], :void
 
       attach_function :sd_journal_open_files,     [:pointer, :pointer, :int], :int
-
-      # not available in 208
-      begin
-        attach_function :sd_journal_open_container, [:pointer, :string, :int], :int
-      rescue FFI::NotFoundError
-        @has_open_container = false
-      end
 
       # navigation
       attach_function :sd_journal_next,          [:pointer], :int
@@ -84,6 +106,7 @@ module Systemd
 
       # misc
       attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
+      # rubocop:enable LineLength
     end
   end
 
