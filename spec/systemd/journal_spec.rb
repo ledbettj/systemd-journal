@@ -438,4 +438,14 @@ RSpec.describe Systemd::Journal do
       Systemd::Journal.message(message: 'hello % world %')
     end
   end
+
+  describe 'print' do
+    it 'escapes percent signs' do
+      expect(Systemd::Journal::Native).to receive(:sd_journal_print)
+        .with(Systemd::Journal::LOG_DEBUG, 'hello %% world %%')
+        .and_return(0)
+
+      Systemd::Journal.print(Systemd::Journal::LOG_DEBUG, 'hello % world %')
+    end
+  end
 end
