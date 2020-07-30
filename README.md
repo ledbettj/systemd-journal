@@ -1,4 +1,4 @@
-# Systemd::Journal [![Gem Version](https://badge.fury.io/rb/systemd-journal.png)](http://badge.fury.io/rb/systemd-journal)  [![Build Status](https://travis-ci.org/ledbettj/systemd-journal.png?branch=master)](https://travis-ci.org/ledbettj/systemd-journal) [![Code Climate](https://codeclimate.com/github/ledbettj/systemd-journal.png)](https://codeclimate.com/github/ledbettj/systemd-journal)
+# Systemd::Journal [![Gem Version](https://badge.fury.io/rb/systemd-journal.png)](http://badge.fury.io/rb/systemd-journal) [![Code Climate](https://codeclimate.com/github/ledbettj/systemd-journal.png)](https://codeclimate.com/github/ledbettj/systemd-journal)
 
 Ruby bindings for reading from the systemd journal.
 
@@ -10,7 +10,7 @@ Ruby bindings for reading from the systemd journal.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'systemd-journal', '~> 1.3'
+gem 'systemd-journal', '~> 1.4'
 ```
 
 And then execute:
@@ -167,6 +167,8 @@ distributions.
 
 The gem will run under JRuby, although some features which rely on native file
 descriptor support will not work.
+
+The gem will not run under truffleruby due to missing support for some FFI features.
 
 If you run into problems or have questions, please open an
 [Issue](https://github.com/ledbettj/systemd-journal/issues) or Pull Request.
