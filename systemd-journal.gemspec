@@ -13,7 +13,7 @@ Gem::Specification.new do |gem|
   gem.summary       = 'Ruby bindings to libsystemd-journal'
   gem.homepage      = 'https://github.com/ledbettj/systemd-journal'
 
-  gem.cert_chain    = Dir['certs/*']
+  gem.cert_chain    = Dir['certs/john@throttle.io.pem']
 
   if $PROGRAM_NAME.end_with?('gem')
     gem.signing_key = ENV['GEM_SIGNING_KEY']
