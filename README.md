@@ -159,6 +159,22 @@ necessary until v246 is released.
 
 In ArchLinux, this patch is applied in systemd-libs 245.6-2.
 
+### I don't get any output when reading from/into a container!
+
+The most likely cause of this is a version mismatch between `libsystemd` on the 
+host and in the container, where the older version does not support features used
+by the newer version.  If you run `journalctl` you might see:
+
+> Journal file ... uses an unsupported feature, ignoring file.
+
+Sadly, this error case is not exposed via the `libsystemd` API so this gem does 
+not know when this happens.  There are two potential workarounds:
+
+* Ensure that the version of `libsystemd` are compatible across host/container
+* Disable the features that are not supported by the older version to cause the
+  newer version to emit compatible journal files.
+
+
 ## Issues?
 
 This gem has been tested primarily on MRI and Arch Linux running systemd version
