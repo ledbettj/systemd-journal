@@ -13,11 +13,9 @@ Gem::Specification.new do |gem|
   gem.summary       = 'Ruby bindings to libsystemd-journal'
   gem.homepage      = 'https://github.com/ledbettj/systemd-journal'
 
-  gem.files         = `git ls-files`.split($/)
-  gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
-  gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
+  gem.files         = Dir['lib/**/*.rb'] + Dir['ext/**/*']
   gem.require_paths = ['lib']
-  gem.extensions    = ["ext/shim/extconf.rb"]
+  gem.extensions    = ['ext/shim/extconf.rb']
 
   gem.required_ruby_version = '>= 3.0'
 
