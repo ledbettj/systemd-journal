@@ -20,9 +20,7 @@ Gem::Specification.new do |gem|
     raise ArgumentError, 'Please set GEM_SIGNING_KEY' if gem.signing_key.nil?
   end
 
-  gem.files         = `git ls-files`.split($/)
-  gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
-  gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
+  gem.files         = Dir['lib/**/*.rb']
   gem.require_paths = ['lib']
 
   gem.required_ruby_version = '>= 1.9.3'
