@@ -29,10 +29,10 @@ Gem::Specification.new do |gem|
 
   gem.add_runtime_dependency 'ffi', '~> 1.9'
 
-  gem.add_development_dependency 'rspec',     '~> 3.4'
-  gem.add_development_dependency 'simplecov', '~> 0.9'
-  gem.add_development_dependency 'rubocop',   '~> 0.26' unless ENV['RUBOCOP'] == 'false'
-  gem.add_development_dependency 'rake',      '~> 12.3'
+  gem.add_development_dependency 'pry',       '~> 0.14'
+  gem.add_development_dependency 'rake',      '~> 13.1'
+  gem.add_development_dependency 'rspec',     '~> 3.13'
+  gem.add_development_dependency 'rubocop',   '~> 1.61' unless ENV['RUBOCOP'] == 'false'
+  gem.add_development_dependency 'simplecov', '~> 0.22'
   gem.add_development_dependency 'yard',      '~> 0.9'
-  gem.add_development_dependency 'pry',       '~> 0.10'
 end
