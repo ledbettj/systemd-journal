@@ -7,4 +7,4 @@ require "mkmf"
 # selectively, or entirely remove this flag.
 append_cflags("-fvisibility=hidden")
 
-create_makefile("shim/shim")
+create_makefile("systemd/journal/shim")
