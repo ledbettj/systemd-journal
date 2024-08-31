@@ -24,6 +24,7 @@ Gem::Specification.new do |gem|
   gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ['lib']
+  gem.extensions    = ["ext/shim/extconf.rb"]
 
   gem.required_ruby_version = '>= 1.9.3'
 
@@ -35,4 +36,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rubocop',   '~> 1.61' unless ENV['RUBOCOP'] == 'false'
   gem.add_development_dependency 'simplecov', '~> 0.22'
   gem.add_development_dependency 'yard',      '~> 0.9'
+  gem.add_development_dependency 'rake-compiler'
 end

@@ -6,6 +6,7 @@ require 'systemd/journal/fields'
 require 'systemd/journal/navigable'
 require 'systemd/journal/filterable'
 require 'systemd/journal/waitable'
+require 'systemd/journal/shim'
 require 'systemd/journal_error'
 require 'systemd/journal_entry'
 require 'systemd/id128'
@@ -322,7 +323,7 @@ module Systemd
     # frees the char*, and returns the ruby string.
     def self.read_and_free_outstr(ptr)
       str = ptr.read_string
-      LibC.free(ptr)
+      Shim.free(ptr)
       str
     end
   end
