@@ -10,27 +10,13 @@ Ruby bindings for reading from the systemd journal.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'systemd-journal', '~> 1.4'
+gem 'systemd-journal', '~> 2.0'
 ```
 
 And then execute:
 
 ```sh
 bundle install
-```
-
-If you have trust issues, fear not:
-
-```sh
-wget https://raw.githubusercontent.com/ledbettj/systemd-journal/master/certs/john@throttle.io.pem
-gem cert --add john@throttle.io.pem
-```
-
-You can then verify the signature at install time with either `gem` or `bundler`:
-
-```sh
-gem install systemd-journal -P HighSecurity
-bundle install --trust-policy HighSecurity
 ```
 
 ## Dependencies
@@ -180,11 +166,6 @@ not know when this happens.  There are two potential workarounds:
 This gem has been tested primarily on MRI and Arch Linux running systemd version
 208 and up.  Please let me know if you have issues with other versions or
 distributions.
-
-The gem will run under JRuby, although some features which rely on native file
-descriptor support will not work.
-
-The gem will not run under truffleruby due to missing support for some FFI features.
 
 If you run into problems or have questions, please open an
 [Issue](https://github.com/ledbettj/systemd-journal/issues) or Pull Request.
