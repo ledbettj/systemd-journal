@@ -8,17 +8,10 @@ Gem::Specification.new do |gem|
   gem.version       = Systemd::Journal::VERSION
   gem.license       = 'MIT'
   gem.authors       = ['John Ledbetter', 'Daniel Mack']
-  gem.email         = ['john@throttle.io']
+  gem.email         = ['john@weirdhorse.party']
   gem.description   = 'Provides the ability to navigate and read entries from the systemd journal in ruby, as well as write events to the journal.'
   gem.summary       = 'Ruby bindings to libsystemd-journal'
   gem.homepage      = 'https://github.com/ledbettj/systemd-journal'
-
-  gem.cert_chain    = Dir['certs/john@throttle.io.pem']
-
-  if $PROGRAM_NAME.end_with?('gem')
-    gem.signing_key = ENV['GEM_SIGNING_KEY']
-    raise ArgumentError, 'Please set GEM_SIGNING_KEY' if gem.signing_key.nil?
-  end
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
@@ -26,7 +19,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ['lib']
   gem.extensions    = ["ext/shim/extconf.rb"]
 
-  gem.required_ruby_version = '>= 1.9.3'
+  gem.required_ruby_version = '>= 3.0'
 
   gem.add_runtime_dependency 'ffi', '~> 1.9'
 
