@@ -86,13 +86,4 @@ module Systemd
       attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
     end
   end
-
-  # @private
-  module LibC
-    require 'ffi'
-    extend FFI::Library
-    ffi_lib FFI::Library::LIBC
-
-    attach_function :free, [:pointer], :void
-  end
 end
