@@ -46,6 +46,7 @@ module Systemd
     #     path: '/var/log/journal/5f5777e46c5f4131bd9b71cbed6b9abf'
     #   )
     def initialize(opts = {})
+      @reopen_options = opts.dup # retain the options for auto reopen
       open_type, flags = validate_options!(opts)
       ptr = FFI::MemoryPointer.new(:pointer, 1)
 
