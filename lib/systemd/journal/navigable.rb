@@ -1,8 +1,8 @@
 module Systemd
   class Journal
     module Navigable
-      LIMIT_TO_AUTO_REOPEN = 10_000
-      private_constant :LIMIT_TO_AUTO_REOPEN
+      ITERATIONS_TO_AUTO_REOPEN = 10_000
+      private_constant :ITERATIONS_TO_AUTO_REOPEN
 
       # returns a string representing the current read position.
       # This string can be passed to {#seek} or {#cursor?}.
@@ -135,20 +135,22 @@ module Systemd
 
         ret = yield
 
-        @sd_call_count += 1
-        if @sd_call_count >= LIMIT_TO_AUTO_REOPEN
-          cursor = self.cursor
+        if auto_reopen
+          @sd_call_count += 1
+          if @sd_call_count >= auto_reopen
+            cursor = self.cursor
 
-          self.close
-          self.initialize(@reopen_options)
+            self.close
+            self.initialize(@reopen_options)
 
-          self.seek(cursor)
-          # To avoid 'Cannot assign requested address' error
-          # It invokes native API directly to avoid nest with_auto_reopen calls
-          rc = Native.sd_journal_next_skip(@ptr, 0)
-          raise JournalError, rc if rc < 0
+            self.seek(cursor)
+            # To avoid 'Cannot assign requested address' error
+            # It invokes native API directly to avoid nest with_auto_reopen calls
+            rc = Native.sd_journal_next_skip(@ptr, 0)
+            raise JournalError, rc if rc < 0
 
-          @sd_call_count = 0
+            @sd_call_count = 0
+          end
         end
 
         ret

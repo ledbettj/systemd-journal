@@ -26,6 +26,9 @@ module Systemd
     include Systemd::Journal::Filterable
     include Systemd::Journal::Waitable
 
+    # Returns the iterations to auto reopen
+    attr_reader :auto_reopen
+
     # Returns a new instance of a Journal, opened with the provided options.
     # @param [Hash] opts optional initialization parameters.
     # @option opts [Integer] :flags a set of bitwise OR-ed
@@ -50,6 +53,10 @@ module Systemd
       open_type, flags = validate_options!(opts)
       ptr = FFI::MemoryPointer.new(:pointer, 1)
 
+      @auto_reopen = (opts.key?(:auto_reopen) ? opts.delete(:auto_reopen) : false)
+      if @auto_reopen
+        @auto_reopen = @auto_reopen.is_a?(Integer) ? @auto_reopen : ITERATIONS_TO_AUTO_REOPEN
+      end
       @finalize = (opts.key?(:finalize) ? opts.delete(:finalize) : true)
       rc = open_journal(open_type, ptr, opts, flags)
       raise JournalError, rc if rc < 0
