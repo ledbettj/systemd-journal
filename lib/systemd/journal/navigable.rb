@@ -101,7 +101,7 @@ module Systemd
       #   and seek to that entry.
       # @return [True]
       # @example Read last journal entry
-      #   j = Systemd::Joural.new
+      #   j = Systemd::Journal.new
       #   j.seek(:tail)
       #   j.move_previous
       #   puts j.current_entry

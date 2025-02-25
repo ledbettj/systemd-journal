@@ -33,7 +33,7 @@ module Systemd
     # @param [Hash] opts optional initialization parameters.
     # @option opts [Integer] :flags a set of bitwise OR-ed
     #   {Systemd::Journal::Flags} which control what journal files are opened.
-    #   Defaults to `0`, meaning all journals avaiable to the current user.
+    #   Defaults to `0`, meaning all journals available to the current user.
     # @option opts [String] :path if provided, open the journal files living
     #   in the provided directory only.  Any provided flags will be ignored
     #   since sd_journal_open_directory does not currently accept any flags.

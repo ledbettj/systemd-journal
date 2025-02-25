@@ -75,7 +75,7 @@ RSpec.describe Systemd::JournalEntry do
           .to eq('Process 123 said test message')
       end
 
-      it 'skips field substition if requested' do
+      it 'skips field substitution if requested' do
         expect(entry.catalog(replace: false)).to eq(catalog)
       end
     end
