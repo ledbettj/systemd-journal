@@ -1,7 +1,7 @@
 require 'ffi'
 
 module Systemd
-  # This execution is raised whenever a sd_journal_* call returns an error.
+  # This exception is raised whenever a sd_journal_* call returns an error.
   class JournalError < StandardError
     # Returns the (positive) error number.
     attr_reader :code
