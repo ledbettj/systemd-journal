@@ -41,6 +41,39 @@ RSpec.describe Systemd::Journal do
 
       expect { j.new(container: 'test') }.to raise_error(ArgumentError)
     end
+
+    context 'auto_reopen' do
+      it 'returns nil as default behavior' do
+        journal = Systemd::Journal.new()
+        expect(journal.auto_reopen).to be_falsy
+      end
+
+      it 'returns default iterations with true' do
+        journal = Systemd::Journal.new(auto_reopen: true)
+        expect(journal.auto_reopen).to be_truthy
+      end
+
+      it 'returns nil with false' do
+        journal = Systemd::Journal.new(auto_reopen: false)
+        expect(journal.auto_reopen).to be_falsy
+      end
+
+      it 'returns iterations with custom value' do
+        journal = Systemd::Journal.new(auto_reopen: 12345)
+        expect(journal.auto_reopen).to be 12345
+      end
+
+      it 'should re-open internal journal pointer at specified iterations' do
+        journal = Systemd::Journal.new(auto_reopen: 2)
+        internal_journal = journal.instance_variable_get(:@ptr)
+
+        journal.move_next
+        expect(journal.instance_variable_get(:@ptr)).to be internal_journal
+
+        journal.move_next
+        expect(journal.instance_variable_get(:@ptr)).to_not be internal_journal
+      end
+    end
   end
 
   describe 'close' do

@@ -26,11 +26,14 @@ module Systemd
     include Systemd::Journal::Filterable
     include Systemd::Journal::Waitable
 
+    # Returns the iterations to auto reopen
+    attr_reader :auto_reopen
+
     # Returns a new instance of a Journal, opened with the provided options.
     # @param [Hash] opts optional initialization parameters.
     # @option opts [Integer] :flags a set of bitwise OR-ed
     #   {Systemd::Journal::Flags} which control what journal files are opened.
-    #   Defaults to `0`, meaning all journals avaiable to the current user.
+    #   Defaults to `0`, meaning all journals available to the current user.
     # @option opts [String] :path if provided, open the journal files living
     #   in the provided directory only.  Any provided flags will be ignored
     #   since sd_journal_open_directory does not currently accept any flags.
@@ -46,9 +49,14 @@ module Systemd
     #     path: '/var/log/journal/5f5777e46c5f4131bd9b71cbed6b9abf'
     #   )
     def initialize(opts = {})
+      @reopen_options = opts.dup # retain the options for auto reopen
       open_type, flags = validate_options!(opts)
       ptr = FFI::MemoryPointer.new(:pointer, 1)
 
+      @auto_reopen = (opts.key?(:auto_reopen) ? opts.delete(:auto_reopen) : false)
+      if @auto_reopen
+        @auto_reopen = @auto_reopen.is_a?(Integer) ? @auto_reopen : ITERATIONS_TO_AUTO_REOPEN
+      end
       @finalize = (opts.key?(:finalize) ? opts.delete(:finalize) : true)
       rc = open_journal(open_type, ptr, opts, flags)
       raise JournalError, rc if rc < 0

@@ -1,6 +1,9 @@
 module Systemd
   class Journal
     module Navigable
+      ITERATIONS_TO_AUTO_REOPEN = 10_000
+      private_constant :ITERATIONS_TO_AUTO_REOPEN
+
       # returns a string representing the current read position.
       # This string can be passed to {#seek} or {#cursor?}.
       # @return [String] a cursor token.
@@ -40,9 +43,11 @@ module Systemd
       # @return [Boolean] False if unable to move to the next entry, indicating
       #   that the pointer has reached the end of the journal.
       def move_next
-        rc = Native.sd_journal_next(@ptr)
-        raise JournalError, rc if rc < 0
-        rc > 0
+        with_auto_reopen {
+          rc = Native.sd_journal_next(@ptr)
+          raise JournalError, rc if rc < 0
+          rc > 0
+        }
       end
 
       # Move the read pointer forward by `amount` entries.
@@ -50,9 +55,11 @@ module Systemd
       #   moved. If this number is less than the requested amount, the read
       #   pointer has reached the end of the journal.
       def move_next_skip(amount)
-        rc = Native.sd_journal_next_skip(@ptr, amount)
-        raise JournalError, rc if rc < 0
-        rc
+        with_auto_reopen {
+          rc = Native.sd_journal_next_skip(@ptr, amount)
+          raise JournalError, rc if rc < 0
+          rc
+        }
       end
 
       # Move the read pointer to the previous entry in the journal.
@@ -60,9 +67,11 @@ module Systemd
       # @return [Boolean] False if unable to move to the previous entry,
       #   indicating that the pointer has reached the beginning of the journal.
       def move_previous
-        rc = Native.sd_journal_previous(@ptr)
-        raise JournalError, rc if rc < 0
-        rc > 0
+        with_auto_reopen {
+          rc = Native.sd_journal_previous(@ptr)
+          raise JournalError, rc if rc < 0
+          rc > 0
+        }
       end
 
       # Move the read pointer backwards by `amount` entries.
@@ -70,9 +79,11 @@ module Systemd
       #   was moved.  If this number is less than the requested amount, the
       #   read pointer has reached the beginning of the journal.
       def move_previous_skip(amount)
-        rc = Native.sd_journal_previous_skip(@ptr, amount)
-        raise JournalError, rc if rc < 0
-        rc
+        with_auto_reopen {
+          rc = Native.sd_journal_previous_skip(@ptr, amount)
+          raise JournalError, rc if rc < 0
+          rc
+        }
       end
 
       # Seek to a position in the journal.
@@ -90,7 +101,7 @@ module Systemd
       #   and seek to that entry.
       # @return [True]
       # @example Read last journal entry
-      #   j = Systemd::Joural.new
+      #   j = Systemd::Journal.new
       #   j.seek(:tail)
       #   j.move_previous
       #   puts j.current_entry
@@ -114,6 +125,35 @@ module Systemd
         raise JournalError, rc if rc < 0
 
         true
+      end
+
+      private
+
+      # reopen the journal automatically due to reduce memory usage
+      def with_auto_reopen
+        @sd_call_count ||= 0
+
+        ret = yield
+
+        if auto_reopen
+          @sd_call_count += 1
+          if @sd_call_count >= auto_reopen
+            cursor = self.cursor
+
+            self.close
+            self.initialize(@reopen_options)
+
+            self.seek(cursor)
+            # To avoid 'Cannot assign requested address' error
+            # It invokes native API directly to avoid nest with_auto_reopen calls
+            rc = Native.sd_journal_next_skip(@ptr, 0)
+            raise JournalError, rc if rc < 0
+
+            @sd_call_count = 0
+          end
+        end
+
+        ret
       end
     end
   end

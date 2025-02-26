@@ -80,6 +80,16 @@ j.current_entry # get the entry we're currently positioned at
 j.seek(Time.parse('2013-10-31T12:00:00+04:00:00'))
 ```
 
+Re-open the journal automatically to reduce memory usage with moving the journal:
+
+```ruby
+Journal.new(auto_reopen: false) # do not ever re-open the journal.
+                                # this should be the default for now
+
+Journal.new(auto_reopen: true)   # re-open the journal after the default ITERATIONS_TO_AUTO_REOPEN
+Journal.new(auto_reopen: 50_000) # re-open the journal after 50k iterations
+```
+
 Waiting for things to happen:
 
 ```ruby
