@@ -32,9 +32,7 @@ module Systemd
       read_id128(:sd_id128_randomize)
     end
 
-    private
-
-    def self.read_id128(func)
+    private_class_method def self.read_id128(func)
       ptr = FFI::MemoryPointer.new(Native::Id128, 1)
       rc = Native.send(func, ptr)
       raise JournalError, rc if rc < 0

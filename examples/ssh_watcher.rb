@@ -3,6 +3,8 @@ require "systemd/journal"
 require "date"
 
 class SSHWatcher
+  LOGIN_REGEXP = /Accepted\s+(?<auth_method>[^\s]+)\s+for\s+(?<user>[^\s]+)\s+from\s+(?<address>[^\s]+)/
+
   def initialize
     @journal = Systemd::Journal.new(flags: Systemd::Journal::Flags::SYSTEM_ONLY)
   end
@@ -15,8 +17,6 @@ class SSHWatcher
   end
 
   private
-
-  LOGIN_REGEXP = /Accepted\s+(?<auth_method>[^\s]+)\s+for\s+(?<user>[^\s]+)\s+from\s+(?<address>[^\s]+)/
 
   def process_event(entry)
     if (m = entry.message.match(LOGIN_REGEXP))

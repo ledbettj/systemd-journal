@@ -46,6 +46,11 @@ module Systemd
       super unless args.empty?
     end
 
+    # @private
+    def respond_to_missing?(m, include_private = false)
+      fields&.include?(m) || super
+    end
+
     # Get the value of a given field in the entry, or nil if it doesn't exist
     # @param [String] the field name for which to look up the value. Can be a
     #   symbol or string, case insensitive.

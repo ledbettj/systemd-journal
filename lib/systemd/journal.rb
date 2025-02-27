@@ -70,7 +70,7 @@ module Systemd
       j = new(opts.merge(finalize: false))
       yield j
     ensure
-      j.close if j
+      j&.close
     end
 
     # Iterate over each entry in the journal, respecting the applied
@@ -236,6 +236,21 @@ module Systemd
       )
     end
 
+    # @private
+    def self.finalize(ptr)
+      proc { Native.sd_journal_close(ptr) unless ptr.nil? }
+    end
+
+    # @private
+    # some sd_journal_* functions return strings that we're expected to free
+    # ourselves. This function copies the string from a char* to a ruby string,
+    # frees the char*, and returns the ruby string.
+    def self.read_and_free_outstr(ptr)
+      str = ptr.read_string
+      Shim.free(ptr)
+      str
+    end
+
     private
 
     def open_journal(type, ptr, opts, flags)
@@ -306,10 +321,6 @@ module Systemd
       [type, flags]
     end
 
-    def self.finalize(ptr)
-      proc { Native.sd_journal_close(ptr) unless ptr.nil? }
-    end
-
     def enumerate_helper(enum_function)
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
@@ -324,15 +335,6 @@ module Systemd
 
     def string_from_out_ptr(p, len)
       p.read_pointer.read_string(len)
-    end
-
-    # some sd_journal_* functions return strings that we're expected to free
-    # ourselves. This function copies the string from a char* to a ruby string,
-    # frees the char*, and returns the ruby string.
-    def self.read_and_free_outstr(ptr)
-      str = ptr.read_string
-      Shim.free(ptr)
-      str
     end
   end
 end
