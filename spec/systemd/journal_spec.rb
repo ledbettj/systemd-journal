@@ -36,10 +36,10 @@ RSpec.describe Systemd::Journal do
     end
 
     it "raises ArgumentError on attempt to open a container without support" do
-      allow(Systemd::Journal::Native).to receive(:open_container?)
+      allow(Systemd::Journal::Native).to receive(:feature?).with(:open_container)
         .and_return(false)
 
-      expect { j.new(container: "test") }.to raise_error(ArgumentError)
+      expect { j.new(container: "test") }.to raise_error(Systemd::UnsupportedFeatureError)
     end
 
     context "auto_reopen" do
