@@ -12,8 +12,8 @@ module Systemd
     #   with a given journal entry.
     def initialize(entry, context = {})
       inspect = []
-      @entry  = entry
-      @ctx    = context
+      @entry = entry
+      @ctx = context
       @fields = entry.map do |key, value|
         name = key.downcase.to_sym
         define_singleton_method(name) { value } unless respond_to?(name)
@@ -21,7 +21,7 @@ module Systemd
         inspect.push("#{name}: '#{value}'")
         name
       end
-      @inspect = inspect.join(', ')
+      @inspect = inspect.join(", ")
     end
 
     # Returns the wall-clock time that this entry was received by the journal.
@@ -43,7 +43,7 @@ module Systemd
     def method_missing(m, *args)
       # not all journal entries will have all fields.  don't raise an error
       # unless the user passed arguments.
-      super(m, *args) unless args.empty?
+      super unless args.empty?
     end
 
     # Get the value of a given field in the entry, or nil if it doesn't exist
@@ -94,7 +94,7 @@ module Systemd
 
     # @private
     def inspect
-      format('#<%s:0x%016x %s>', self.class.name, object_id, @inspect)
+      format("#<%s:0x%016x %s>", self.class.name, object_id, @inspect)
     end
 
     private

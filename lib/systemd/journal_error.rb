@@ -1,4 +1,4 @@
-require 'ffi'
+require "ffi"
 
 module Systemd
   # This exception is raised whenever a sd_journal_* call returns an error.
