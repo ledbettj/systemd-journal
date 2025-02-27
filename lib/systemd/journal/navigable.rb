@@ -35,7 +35,7 @@ module Systemd
       #   it moves backwards.  Defaults to moving forward one entry.
       # @return [Integer] number of entries the read pointer actually moved.
       def move(offset = 1)
-        offset > 0 ? move_next_skip(offset) : move_previous_skip(-offset)
+        (offset > 0) ? move_next_skip(offset) : move_previous_skip(-offset)
       end
 
       # Move the read pointer to the next entry in the journal.
@@ -106,21 +106,20 @@ module Systemd
       #   j.move_previous
       #   puts j.current_entry
       def seek(where)
-        rc = case
-             when [:head, :start].include?(where)
-               Native.sd_journal_seek_head(@ptr)
-             when [:tail, :end].include?(where)
-               Native.sd_journal_seek_tail(@ptr)
-             when where.is_a?(Time)
-               Native.sd_journal_seek_realtime_usec(
-                 @ptr,
-                 where.to_i * 1_000_000
-               )
-             when where.is_a?(String)
-               Native.sd_journal_seek_cursor(@ptr, where)
-             else
-               raise ArgumentError, "Unknown seek type: #{where.class}"
-             end
+        rc = if [:head, :start].include?(where)
+          Native.sd_journal_seek_head(@ptr)
+        elsif [:tail, :end].include?(where)
+          Native.sd_journal_seek_tail(@ptr)
+        elsif where.is_a?(Time)
+          Native.sd_journal_seek_realtime_usec(
+            @ptr,
+            where.to_i * 1_000_000
+          )
+        elsif where.is_a?(String)
+          Native.sd_journal_seek_cursor(@ptr, where)
+        else
+          raise ArgumentError, "Unknown seek type: #{where.class}"
+        end
 
         raise JournalError, rc if rc < 0
 
@@ -140,10 +139,10 @@ module Systemd
           if @sd_call_count >= auto_reopen
             cursor = self.cursor
 
-            self.close
-            self.initialize(@reopen_options)
+            close
+            initialize(@reopen_options)
 
-            self.seek(cursor)
+            seek(cursor)
             # To avoid 'Cannot assign requested address' error
             # It invokes native API directly to avoid nest with_auto_reopen calls
             rc = Native.sd_journal_next_skip(@ptr, 0)

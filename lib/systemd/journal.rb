@@ -1,17 +1,17 @@
-require 'systemd/journal/version'
-require 'systemd/journal/native'
-require 'systemd/journal/flags'
-require 'systemd/journal/writable'
-require 'systemd/journal/fields'
-require 'systemd/journal/navigable'
-require 'systemd/journal/filterable'
-require 'systemd/journal/waitable'
-require 'systemd/journal/shim'
-require 'systemd/journal_error'
-require 'systemd/journal_entry'
-require 'systemd/id128'
-require 'systemd/ffi_size_t'
-require 'systemd'
+require "systemd/journal/version"
+require "systemd/journal/native"
+require "systemd/journal/flags"
+require "systemd/journal/writable"
+require "systemd/journal/fields"
+require "systemd/journal/navigable"
+require "systemd/journal/filterable"
+require "systemd/journal/waitable"
+require "systemd/journal/shim"
+require "systemd/journal_error"
+require "systemd/journal_entry"
+require "systemd/id128"
+require "systemd/ffi_size_t"
+require "systemd"
 
 module Systemd
   # Class to allow interacting with the systemd journal.
@@ -96,13 +96,13 @@ module Systemd
     def read_field(field)
       len_ptr = FFI::MemoryPointer.new(:size_t, 1)
       out_ptr = FFI::MemoryPointer.new(:pointer, 1)
-      field   = field.to_s.upcase
+      field = field.to_s.upcase
       rc = Native.sd_journal_get_data(@ptr, field, out_ptr, len_ptr)
 
       raise JournalError, rc if rc < 0
 
       len = len_ptr.read_size_t
-      string_from_out_ptr(out_ptr, len).split('=', 2).last
+      string_from_out_ptr(out_ptr, len).split("=", 2).last
     end
 
     # Read the contents of all fields from the current journal entry.
@@ -129,7 +129,7 @@ module Systemd
 
       JournalEntry.new(
         results,
-        realtime_ts:  read_realtime,
+        realtime_ts: read_realtime,
         monotonic_ts: read_monotonic
       )
     end
@@ -247,13 +247,13 @@ module Systemd
         Native.sd_journal_open_directory(ptr, opts[:path], 0)
       when :files, :file
         files = Array(opts[type])
-        @open_target = "file#{files.one? ? '' : 's'}:#{files.join(',')}"
+        @open_target = "file#{files.one? ? "" : "s"}:#{files.join(",")}"
         Native.sd_journal_open_files(ptr, array_to_ptrs(files), 0)
       when :container
         @open_target = "container:#{opts[:container]}"
         Native.sd_journal_open_container(ptr, opts[:container], flags)
       when :local
-        @open_target = 'journal:local'
+        @open_target = "journal:local"
         Native.sd_journal_open(ptr, flags)
       else
         raise ArgumentError, "Unknown open type: #{type}"
@@ -269,7 +269,7 @@ module Systemd
     end
 
     def read_monotonic
-      out  = FFI::MemoryPointer.new(:uint64, 1)
+      out = FFI::MemoryPointer.new(:uint64, 1)
       boot = FFI::MemoryPointer.new(Systemd::Id128::Native::Id128, 1)
 
       rc = Native.sd_journal_get_monotonic_usec(@ptr, out, boot)
@@ -297,7 +297,7 @@ module Systemd
 
       if type == :container && !Native.open_container?
         raise ArgumentError,
-              'This native library version does not support opening containers'
+          "This native library version does not support opening containers"
       end
 
       flags = opts[:flags] if [:local, :container].include?(type)
@@ -319,7 +319,7 @@ module Systemd
       return nil if rc == 0
 
       len = len_ptr.read_size_t
-      string_from_out_ptr(out_ptr, len).split('=', 2)
+      string_from_out_ptr(out_ptr, len).split("=", 2)
     end
 
     def string_from_out_ptr(p, len)

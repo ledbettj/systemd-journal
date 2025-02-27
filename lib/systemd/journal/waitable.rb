@@ -1,7 +1,7 @@
 module Systemd
   class Journal
     module Waitable
-      IS_JRUBY = (RUBY_ENGINE == 'jruby')
+      IS_JRUBY = (RUBY_ENGINE == "jruby")
 
       # Block until the journal is changed.
       # @param timeout_usec [Integer] maximum number of microseconds to wait
@@ -21,7 +21,7 @@ module Systemd
         else
           rc = Native.sd_journal_wait(@ptr, timeout_usec)
           raise JournalError, rc if rc.is_a?(Integer) && rc < 0
-          rc == :nop ? nil : rc
+          (rc == :nop) ? nil : rc
         end
       end
 
@@ -50,7 +50,7 @@ module Systemd
       private
 
       def wait_select(timeout_usec)
-        timeout_sec = (timeout_usec == -1 ? nil : timeout_usec / 1e6)
+        timeout_sec = ((timeout_usec == -1) ? nil : timeout_usec / 1e6)
         r, *_ = IO.select([io_object], [], [], timeout_sec)
         r ? reason_for_wakeup : nil
       end
@@ -68,7 +68,7 @@ module Systemd
       def reason_for_wakeup
         rc = Native.sd_journal_process(@ptr)
         raise JournalError, rc if rc.is_a?(Integer) && rc < 0
-        rc == :nop ? nil : rc
+        (rc == :nop) ? nil : rc
       end
     end
   end

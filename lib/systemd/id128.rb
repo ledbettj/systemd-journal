@@ -1,4 +1,4 @@
-require 'ffi'
+require "ffi"
 
 module Systemd
   # Provides access to the 128-bit IDs for various items in the systemd
@@ -43,28 +43,28 @@ module Systemd
 
     # providing bindings to the systemd-id128 library.
     module Native
-      require 'ffi'
+      require "ffi"
       extend FFI::Library
-      ffi_lib %w( libsystemd.so.0       libsystemd.so
-                  libsystemd-id128.so.0 libsystemd-id128.so )
+      ffi_lib %w[ libsystemd.so.0 libsystemd.so
+        libsystemd-id128.so.0 libsystemd-id128.so ]
 
       attach_function :sd_id128_get_machine, [:pointer], :int
-      attach_function :sd_id128_get_boot,    [:pointer], :int
-      attach_function :sd_id128_randomize,   [:pointer], :int
+      attach_function :sd_id128_get_boot, [:pointer], :int
+      attach_function :sd_id128_randomize, [:pointer], :int
 
       # @private
       class Id128 < FFI::Union
-        layout :bytes,  [:uint8, 16],
-               :dwords, [:uint32, 4],
-               :qwords, [:uint64, 2]
+        layout :bytes, [:uint8, 16],
+          :dwords, [:uint32, 4],
+          :qwords, [:uint64, 2]
 
         def to_s
-          format('%02x' * 16, *self[:bytes].to_a)
+          format("%02x" * 16, *self[:bytes].to_a)
         end
 
         def self.from_s(str)
           r = Id128.new
-          [str].pack('H*').bytes.each_with_index do |b, i|
+          [str].pack("H*").bytes.each_with_index do |b, i|
             r[:bytes][i] = b
           end
 
