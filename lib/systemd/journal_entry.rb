@@ -48,7 +48,7 @@ module Systemd
 
     # @private
     def respond_to_missing?(m, include_private = false)
-      fields.include?(m) || super
+      fields&.include?(m) || super
     end
 
     # Get the value of a given field in the entry, or nil if it doesn't exist
