@@ -1,4 +1,4 @@
-require 'systemd/id128'
+require "systemd/id128"
 
 module Systemd
   # See {Systemd::Id128.machine_id}.

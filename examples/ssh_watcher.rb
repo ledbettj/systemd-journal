@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
-require 'systemd/journal'
-require 'date'
+require "systemd/journal"
+require "date"
 
 class SSHWatcher
   def initialize
@@ -8,10 +8,10 @@ class SSHWatcher
   end
 
   def run
-    @journal.filter(_exe: '/usr/bin/sshd')
+    @journal.filter(_exe: "/usr/bin/sshd")
     @journal.seek(:tail)
     @journal.move_previous
-    @journal.watch{ |entry| process_event(entry) }
+    @journal.watch { |entry| process_event(entry) }
   end
 
   private
