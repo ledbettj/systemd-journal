@@ -11,6 +11,7 @@ require "systemd/journal_error"
 require "systemd/journal_entry"
 require "systemd/id128"
 require "systemd/ffi_size_t"
+require "systemd/unsupported_feature_error"
 require "systemd"
 
 module Systemd
@@ -42,6 +43,8 @@ module Systemd
     #   does not currently accept any flags.
     # @option opts [String] :container if provided, open the journal files from
     #   the container with the provided machine name only.
+    # @option opts [String] :namespace if provided, specify which journal namespace
+    #   to open.
     # @example Read only system journal entries
     #   j = Systemd::Journal.new(flags: Systemd::Journal::Flags::SYSTEM_ONLY)
     # @example Directly open a journal directory
@@ -209,6 +212,26 @@ module Systemd
       end
     end
 
+    def runtime_files?
+      raise UnsupportedFeatureError, :has_runtime_files unless Native.feature?(:has_runtime_files)
+
+      if (rc = Native.sd_journal_has_runtime_files(@ptr)) < 0
+        raise JournalError, rc
+      end
+
+      rc > 0
+    end
+
+    def persistent_files?
+      raise UnsupportedFeatureError, :has_persistent_files unless Native.feature?(:has_runtime_files)
+
+      if (rc = Native.sd_journal_has_persistent_files(@ptr)) < 0
+        raise JournalError, rc
+      end
+
+      rc > 0
+    end
+
     # Explicitly close the underlying Journal file.
     # Once this is done, any operations on the instance will fail and raise an
     # exception.
@@ -270,6 +293,9 @@ module Systemd
       when :local
         @open_target = "journal:local"
         Native.sd_journal_open(ptr, flags)
+      when :namespace
+        @open_target = "namespace:#{opts[:namespace]}"
+        Native.sd_journal_open_namespace(ptr, opts[:namespace], flags)
       else
         raise ArgumentError, "Unknown open type: #{type}"
       end
@@ -303,16 +329,19 @@ module Systemd
     end
 
     def validate_options!(opts)
-      exclusive = [:path, :files, :container, :file]
+      exclusive = [:path, :files, :container, :file, :namespace]
       given = (opts.keys & exclusive)
 
       raise ArgumentError, "conflicting options: #{given}" if given.length > 1
 
       type = given.first || :local
 
-      if type == :container && !Native.open_container?
-        raise ArgumentError,
-          "This native library version does not support opening containers"
+      if type == :container && !Native.feature?(:open_container)
+        raise UnsupportedFeatureError, :open_container
+      end
+
+      if type == :namespace && !Native.feature?(:open_namespace)
+        raise UnsupportedFeatureError, :open_namespace
       end
 
       flags = opts[:flags] if [:local, :container].include?(type)
