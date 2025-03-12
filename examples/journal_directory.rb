@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'systemd/journal'
+require "systemd/journal"
 
 if ARGV.length == 0
   puts "usage: ./#{File.basename(__FILE__)} /var/log/journal/{machine-id}"
