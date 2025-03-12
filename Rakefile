@@ -24,4 +24,4 @@ Rake::ExtensionTask.new("shim", GEMSPEC) do |ext|
   ext.lib_dir = "lib/systemd/journal/"
 end
 
-task default: :spec
+task default: [:spec, :standard]

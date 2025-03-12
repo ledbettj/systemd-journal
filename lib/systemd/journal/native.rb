@@ -11,10 +11,26 @@ module Systemd
       ffi_lib %w[ libsystemd.so.0 libsystemd.so
         libsystemd-journal.so.0 libsystemd-journal.so]
 
-      @has_open_container = true
+      @feature_level = 256
 
-      def self.open_container?
-        @has_open_container
+      def self.feature_level
+        @feature_level
+      end
+
+      def self.feature_level?(value)
+        feature_level >= value
+      end
+
+      def self.feature?(feature)
+        respond_to?(:"sd_journal_#{feature}")
+      end
+
+      def self.at_feature_level(needed_level, &blk)
+        return unless feature_level?(needed_level)
+
+        instance_exec(&blk)
+      rescue FFI::NotFoundError
+        @feature_level = needed_level - 1
       end
 
       # setup/teardown
@@ -23,13 +39,6 @@ module Systemd
       attach_function :sd_journal_close, [:pointer], :void
 
       attach_function :sd_journal_open_files, [:pointer, :pointer, :int], :int
-
-      # not available in 208
-      begin
-        attach_function :sd_journal_open_container, [:pointer, :string, :int], :int
-      rescue FFI::NotFoundError
-        @has_open_container = false
-      end
 
       # navigation
       attach_function :sd_journal_next, [:pointer], :int
@@ -84,6 +93,40 @@ module Systemd
 
       # misc
       attach_function :sd_journal_get_usage, [:pointer, :pointer], :int
+
+      at_feature_level(209) do
+        attach_function :sd_journal_open_container, [:pointer, :string, :int], :int
+      end
+
+      at_feature_level(229) do
+        attach_function :sd_journal_has_runtime_files, [:pointer], :int
+        attach_function :sd_journal_has_persistent_files, [:pointer], :int
+        attach_function :sd_journal_enumerate_fields, [:pointer, :pointer], :int
+        attach_function :sd_journal_restart_fields, [:pointer], :int
+      end
+
+      at_feature_level(230) do
+        attach_function :sd_journal_open_directory_fd, [:pointer, :int, :int], :int
+        attach_function :sd_journal_open_files_fd, [:pointer, :pointer, :uint, :int], :int
+      end
+
+      at_feature_level(245) do
+        attach_function :sd_journal_open_namespace, [:pointer, :string, :int], :int
+      end
+
+      # TODO: wrapper functions not yet implemented.
+      at_feature_level(246) do
+        attach_function :sd_journal_enumerate_available_data, [:pointer, :pointer, :size_t], :int
+        attach_function :sd_journal_enumerate_available_unique, [:pointer, :pointer, :size_t], :int
+      end
+
+      at_feature_level(254) do
+        attach_function :sd_journal_step_one, [:pointer, :int], :int
+      end
+
+      at_feature_level(256) do
+        attach_function :sd_journal_stream_fd_with_namespace, [:string, :string, :int, :bool], :int
+      end
     end
   end
 end

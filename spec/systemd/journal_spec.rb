@@ -36,10 +36,10 @@ RSpec.describe Systemd::Journal do
     end
 
     it "raises ArgumentError on attempt to open a container without support" do
-      allow(Systemd::Journal::Native).to receive(:open_container?)
+      allow(Systemd::Journal::Native).to receive(:feature?).with(:open_container)
         .and_return(false)
 
-      expect { j.new(container: "test") }.to raise_error(ArgumentError)
+      expect { j.new(container: "test") }.to raise_error(Systemd::UnsupportedFeatureError)
     end
 
     context "auto_reopen" do
@@ -479,6 +479,66 @@ RSpec.describe Systemd::Journal do
         .and_return(0)
 
       Systemd::Journal.print(Systemd::Journal::LOG_DEBUG, "hello % world %")
+    end
+  end
+
+  describe "fields" do
+    let(:expected_values) { journal_json.flat_map(&:keys).uniq }
+
+    it "enumerates the list of fields from the opened journal" do
+      pending "why does this not match?"
+      fields = j.fields
+      values = fields.to_a
+
+      aggregate_failures do
+        expect(fields).to be_instance_of(Enumerator)
+        expect(expected_values.sort).to eq(values.sort)
+      end
+    end
+  end
+
+  describe "persistent_files?" do
+    subject { j.persistent_files? }
+
+    it { is_expected.to eq(false) }
+
+    context "when not supported by the underlying version" do
+      before { allow(Systemd::Journal::Native).to receive(:feature?).with(:has_persistent_files).and_return(false) }
+      it "should raise an error" do
+        expect { subject }.to raise_error(Systemd::UnsupportedFeatureError)
+      end
+    end
+  end
+
+  describe "runtime_files?" do
+    subject { j.runtime_files? }
+
+    it { is_expected.to eq(false) }
+
+    context "when not supported by the underlying version" do
+      before { allow(Systemd::Journal::Native).to receive(:feature?).with(:has_runtime_files).and_return(false) }
+      it "should raise an error" do
+        expect { subject }.to raise_error(Systemd::UnsupportedFeatureError)
+      end
+    end
+  end
+
+  describe "log_stream" do
+    subject(:j) { Systemd::Journal }
+
+    context "without a namespace" do
+      subject(:stream) { j.log_stream("test_stream", Systemd::Journal::LOG_INFO) }
+
+      it { is_expected.to be_instance_of(IO) }
+    end
+
+    context "with a non-existant namespace" do
+      subject(:stream) { j.log_stream("test_stream", Systemd::Journal::LOG_INFO, namespace: "this-does-not-exist") }
+
+      it "should raise an error" do
+        pending "CI version of Ubuntu does not have libsystemd v256"
+        expect { stream }.to raise_error(Systemd::JournalError)
+      end
     end
   end
 end

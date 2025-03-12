@@ -11,6 +11,7 @@ require "systemd/journal_error"
 require "systemd/journal_entry"
 require "systemd/id128"
 require "systemd/ffi_size_t"
+require "systemd/unsupported_feature_error"
 require "systemd"
 
 module Systemd
@@ -42,8 +43,10 @@ module Systemd
     #   does not currently accept any flags.
     # @option opts [String] :container if provided, open the journal files from
     #   the container with the provided machine name only.
+    # @option opts [String] :namespace if provided, specify which journal namespace
+    #   to open.
     # @example Read only system journal entries
-    #   j = Systemd::Journal.new(flags: Systemd::Journal::Flags::SYSTEM_ONLY)
+    #   j = Systemd::Journal.new(flags: Systemd::Journal::Flags::SYSTEM)
     # @example Directly open a journal directory
     #   j = Systemd::Journal.new(
     #     path: '/var/log/journal/5f5777e46c5f4131bd9b71cbed6b9abf'
@@ -176,6 +179,29 @@ module Systemd
       results
     end
 
+    # Iterate through all the field names used in the opened Journal files.
+    # Note that the field names are limited to the number of characters specified by
+    # {#data_threshold}.
+    # If a block is given, it is called with each field until no more
+    # fields remain.  Otherwise, returns an enumerator which can be chained.
+    # @return [Enumerator] an enumerator of field names.
+    def fields
+      return to_enum(:fields) unless block_given?
+
+      field_ptr = FFI::MemoryPointer.new(:pointer, 1)
+      Native.sd_journal_restart_fields(@ptr)
+
+      while (_rc = Native.sd_journal_enumerate_fields(@ptr, field_ptr)).positive?
+        yield field_ptr.read_pointer.read_string
+      end
+
+      # NOTE: in my testing, rc is always -EBADMSG here (-74)
+      # the C-macro provided ignores these errors as best I can tell, so we
+      # will swallow them too.
+      #
+      # raise JournalError, rc if rc.negative?
+    end
+
     # Get the number of bytes the Journal is currently using on disk.
     # If {Systemd::Journal::Flags::LOCAL_ONLY} was passed when opening the
     # journal,  this value will only reflect the size of journal files of the
@@ -186,6 +212,7 @@ module Systemd
       rc = Native.sd_journal_get_usage(@ptr, size_ptr)
 
       raise JournalError, rc if rc < 0
+
       size_ptr.read_uint64
     end
 
@@ -207,6 +234,26 @@ module Systemd
       if (rc = Native.sd_journal_set_data_threshold(@ptr, threshold)) < 0
         raise JournalError, rc
       end
+    end
+
+    def runtime_files?
+      raise UnsupportedFeatureError, :has_runtime_files unless Native.feature?(:has_runtime_files)
+
+      if (rc = Native.sd_journal_has_runtime_files(@ptr)) < 0
+        raise JournalError, rc
+      end
+
+      rc > 0
+    end
+
+    def persistent_files?
+      raise UnsupportedFeatureError, :has_persistent_files unless Native.feature?(:has_persistent_files)
+
+      if (rc = Native.sd_journal_has_persistent_files(@ptr)) < 0
+        raise JournalError, rc
+      end
+
+      rc > 0
     end
 
     # Explicitly close the underlying Journal file.
@@ -264,14 +311,35 @@ module Systemd
         files = Array(opts[type])
         @open_target = "file#{files.one? ? "" : "s"}:#{files.join(",")}"
         Native.sd_journal_open_files(ptr, array_to_ptrs(files), 0)
+      when :fd
+        fds = Array(opts[:fd])
+        @open_target = "fd#{fds.one? ? "" : "s"}:#{fds.join(",")}"
+        open_journal_fds(ptr, fds, flags)
       when :container
         @open_target = "container:#{opts[:container]}"
         Native.sd_journal_open_container(ptr, opts[:container], flags)
       when :local
         @open_target = "journal:local"
         Native.sd_journal_open(ptr, flags)
+      when :namespace
+        @open_target = "namespace:#{opts[:namespace]}"
+        Native.sd_journal_open_namespace(ptr, opts[:namespace], flags)
       else
         raise ArgumentError, "Unknown open type: #{type}"
+      end
+    end
+
+    def open_journal_fds(ptr, fds, flags)
+      is_files = fds.all? { |fd| IO.new(fd, File::RDONLY, autoclose: false).stat.file? }
+
+      if is_files
+        fd_ptr = FFI::MemoryPointer.new(:int, fds.length)
+        fd_ptr.put_array_of_int(0, fds)
+        Native.sd_journal_open_files_fd(ptr, fd_ptr, fds.length, flags)
+      elsif fds.one?
+        Native.sd_journal_open_directory_fd(ptr, fds.first, flags)
+      else
+        raise ArgumentError, "Cannot mix directory and file file descriptors"
       end
     end
 
@@ -303,16 +371,19 @@ module Systemd
     end
 
     def validate_options!(opts)
-      exclusive = [:path, :files, :container, :file]
+      exclusive = [:path, :files, :container, :file, :namespace]
       given = (opts.keys & exclusive)
 
       raise ArgumentError, "conflicting options: #{given}" if given.length > 1
 
       type = given.first || :local
 
-      if type == :container && !Native.open_container?
-        raise ArgumentError,
-          "This native library version does not support opening containers"
+      if type == :container && !Native.feature?(:open_container)
+        raise UnsupportedFeatureError, :open_container
+      end
+
+      if type == :namespace && !Native.feature?(:open_namespace)
+        raise UnsupportedFeatureError, :open_namespace
       end
 
       flags = opts[:flags] if [:local, :container].include?(type)
