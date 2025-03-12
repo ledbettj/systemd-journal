@@ -311,6 +311,10 @@ module Systemd
         files = Array(opts[type])
         @open_target = "file#{files.one? ? "" : "s"}:#{files.join(",")}"
         Native.sd_journal_open_files(ptr, array_to_ptrs(files), 0)
+      when :fd
+        fds = Array(opts[:fd])
+        @open_target = "fd#{fds.one? ? "" : "s"}:#{fds.join(",")}"
+        open_journal_fds(ptr, fds, flags)
       when :container
         @open_target = "container:#{opts[:container]}"
         Native.sd_journal_open_container(ptr, opts[:container], flags)
@@ -322,6 +326,20 @@ module Systemd
         Native.sd_journal_open_namespace(ptr, opts[:namespace], flags)
       else
         raise ArgumentError, "Unknown open type: #{type}"
+      end
+    end
+
+    def open_journal_fds(ptr, fds, flags)
+      is_files = fds.all? { |fd| IO.new(fd, File::RDONLY, autoclose: false).stat.file? }
+
+      if is_files
+        fd_ptr = FFI::MemoryPointer.new(:int, fds.length)
+        fd_ptr.put_array_of_int(0, fds)
+        Native.sd_journal_open_files_fd(ptr, fd_ptr, fds.length, flags)
+      elsif fds.one?
+        Native.sd_journal_open_directory_fd(ptr, fds.first, flags)
+      else
+        raise ArgumentError, "Cannot mix directory and file file descriptors"
       end
     end
 
