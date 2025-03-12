@@ -41,6 +41,9 @@ module Systemd
         # @return [IO] an IO object.
         def log_stream(identifier, priority, opts = {})
           is_namespaced = !opts[:namespace].nil?
+
+          raise UnsupportedFeatureError, :stream_fd_with_namespace if is_namespaced && !Native.feature?(:stream_fd_with_namespace)
+
           params = is_namespaced ? [opts[:namespace]] : []
           params += [identifier, priority, !opts[:prefix].nil?]
           fn = is_namespaced ? :sd_journal_stream_fd_with_namespace : :sd_journal_stream_fd

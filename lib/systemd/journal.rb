@@ -247,7 +247,7 @@ module Systemd
     end
 
     def persistent_files?
-      raise UnsupportedFeatureError, :has_persistent_files unless Native.feature?(:has_runtime_files)
+      raise UnsupportedFeatureError, :has_persistent_files unless Native.feature?(:has_persistent_files)
 
       if (rc = Native.sd_journal_has_persistent_files(@ptr)) < 0
         raise JournalError, rc

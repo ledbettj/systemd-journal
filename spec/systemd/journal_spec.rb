@@ -497,6 +497,32 @@ RSpec.describe Systemd::Journal do
     end
   end
 
+  describe "persistent_files?" do
+    subject { j.persistent_files? }
+
+    it { is_expected.to eq(false) }
+
+    context "when not supported by the underlying version" do
+      before { allow(Systemd::Journal::Native).to receive(:feature?).with(:has_persistent_files).and_return(false) }
+      it "should raise an error" do
+        expect { subject }.to raise_error(Systemd::UnsupportedFeatureError)
+      end
+    end
+  end
+
+  describe "runtime_files?" do
+    subject { j.runtime_files? }
+
+    it { is_expected.to eq(false) }
+
+    context "when not supported by the underlying version" do
+      before { allow(Systemd::Journal::Native).to receive(:feature?).with(:has_runtime_files).and_return(false) }
+      it "should raise an error" do
+        expect { subject }.to raise_error(Systemd::UnsupportedFeatureError)
+      end
+    end
+  end
+
   describe "log_stream" do
     subject(:j) { Systemd::Journal }
 
@@ -510,6 +536,7 @@ RSpec.describe Systemd::Journal do
       subject(:stream) { j.log_stream("test_stream", Systemd::Journal::LOG_INFO, namespace: "this-does-not-exist") }
 
       it "should raise an error" do
+        pending "CI version of Ubuntu does not have libsystemd v256"
         expect { stream }.to raise_error(Systemd::JournalError)
       end
     end
