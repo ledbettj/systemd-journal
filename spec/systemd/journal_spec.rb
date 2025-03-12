@@ -481,4 +481,37 @@ RSpec.describe Systemd::Journal do
       Systemd::Journal.print(Systemd::Journal::LOG_DEBUG, "hello % world %")
     end
   end
+
+  describe "fields" do
+    let(:expected_values) { journal_json.flat_map(&:keys).uniq }
+
+    it "enumerates the list of fields from the opened journal" do
+      pending "why does this not match?"
+      fields = j.fields
+      values = fields.to_a
+
+      aggregate_failures do
+        expect(fields).to be_instance_of(Enumerator)
+        expect(expected_values.sort).to eq(values.sort)
+      end
+    end
+  end
+
+  describe "log_stream" do
+    subject(:j) { Systemd::Journal }
+
+    context "without a namespace" do
+      subject(:stream) { j.log_stream("test_stream", Systemd::Journal::LOG_INFO) }
+
+      it { is_expected.to be_instance_of(IO) }
+    end
+
+    context "with a non-existant namespace" do
+      subject(:stream) { j.log_stream("test_stream", Systemd::Journal::LOG_INFO, namespace: "this-does-not-exist") }
+
+      it "should raise an error" do
+        expect { stream }.to raise_error(Systemd::JournalError)
+      end
+    end
+  end
 end

@@ -114,6 +114,7 @@ module Systemd
         attach_function :sd_journal_open_namespace, [:pointer, :string, :int], :int
       end
 
+      # TODO: wrapper functions not yet implemented.
       at_feature_level(246) do
         attach_function :sd_journal_enumerate_available_data, [:pointer, :pointer, :size_t], :int
         attach_function :sd_journal_enumerate_available_unique, [:pointer, :pointer, :size_t], :int
@@ -124,7 +125,7 @@ module Systemd
       end
 
       at_feature_level(256) do
-        attach_function :sd_journal_stream_fd_with_namespace, [:string, :string, :int, :int], :int
+        attach_function :sd_journal_stream_fd_with_namespace, [:string, :string, :int, :bool], :int
       end
     end
   end

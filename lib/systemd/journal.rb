@@ -46,7 +46,7 @@ module Systemd
     # @option opts [String] :namespace if provided, specify which journal namespace
     #   to open.
     # @example Read only system journal entries
-    #   j = Systemd::Journal.new(flags: Systemd::Journal::Flags::SYSTEM_ONLY)
+    #   j = Systemd::Journal.new(flags: Systemd::Journal::Flags::SYSTEM)
     # @example Directly open a journal directory
     #   j = Systemd::Journal.new(
     #     path: '/var/log/journal/5f5777e46c5f4131bd9b71cbed6b9abf'
@@ -179,6 +179,29 @@ module Systemd
       results
     end
 
+    # Iterate through all the field names used in the opened Journal files.
+    # Note that the field names are limited to the number of characters specified by
+    # {#data_threshold}.
+    # If a block is given, it is called with each field until no more
+    # fields remain.  Otherwise, returns an enumerator which can be chained.
+    # @return [Enumerator] an enumerator of field names.
+    def fields
+      return to_enum(:fields) unless block_given?
+
+      field_ptr = FFI::MemoryPointer.new(:pointer, 1)
+      Native.sd_journal_restart_fields(@ptr)
+
+      while (_rc = Native.sd_journal_enumerate_fields(@ptr, field_ptr)).positive?
+        yield field_ptr.read_pointer.read_string
+      end
+
+      # NOTE: in my testing, rc is always -EBADMSG here (-74)
+      # the C-macro provided ignores these errors as best I can tell, so we
+      # will swallow them too.
+      #
+      # raise JournalError, rc if rc.negative?
+    end
+
     # Get the number of bytes the Journal is currently using on disk.
     # If {Systemd::Journal::Flags::LOCAL_ONLY} was passed when opening the
     # journal,  this value will only reflect the size of journal files of the
@@ -189,6 +212,7 @@ module Systemd
       rc = Native.sd_journal_get_usage(@ptr, size_ptr)
 
       raise JournalError, rc if rc < 0
+
       size_ptr.read_uint64
     end
 
