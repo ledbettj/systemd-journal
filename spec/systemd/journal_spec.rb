@@ -64,7 +64,9 @@ RSpec.describe Systemd::Journal do
       end
 
       it "should re-open internal journal pointer at specified iterations" do
-        journal = Systemd::Journal.new(auto_reopen: 2)
+        journal = Systemd::Journal.new(file: journal_file, auto_reopen: 3)
+        journal.seek(:head)
+        journal.move_next
 
         condition = {_transport: "kernel"}
         journal.filter(condition)
