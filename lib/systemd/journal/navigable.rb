@@ -138,9 +138,12 @@ module Systemd
           @sd_call_count += 1
           if @sd_call_count >= auto_reopen
             cursor = self.cursor
+            matches = @reopen_filterable_matches.dup
 
             close
             initialize(@reopen_options)
+
+            filter(matches)
 
             seek(cursor)
             # To avoid 'Cannot assign requested address' error

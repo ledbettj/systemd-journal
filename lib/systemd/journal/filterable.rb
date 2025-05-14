@@ -36,6 +36,8 @@ module Systemd
       # @param [String] value the match to search for, e.g. '/usr/bin/sshd'
       # @return [nil]
       def add_filter(field, value)
+        @reopen_filterable_matches[field] = value
+
         match = "#{field.to_s.upcase}=#{value}"
         rc = Native.sd_journal_add_match(@ptr, match, match.length)
         raise JournalError, rc if rc < 0
