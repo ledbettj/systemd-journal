@@ -145,12 +145,12 @@ module Systemd
               return
             end
 
-            matches = @reopen_filterable_matches.dup
+            filter_conditions = @reopen_filter_conditions.dup
 
             close
             initialize(@reopen_options)
 
-            filter(matches)
+            restore_filters(filter_conditions)
 
             seek(cursor)
             # To avoid 'Cannot assign requested address' error

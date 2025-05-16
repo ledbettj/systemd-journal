@@ -36,7 +36,7 @@ module Systemd
       # @param [String] value the match to search for, e.g. '/usr/bin/sshd'
       # @return [nil]
       def add_filter(field, value)
-        @reopen_filterable_matches[field] = value
+        @reopen_filter_conditions << {field => value}
 
         match = "#{field.to_s.upcase}=#{value}"
         rc = Native.sd_journal_add_match(@ptr, match, match.length)
@@ -72,6 +72,8 @@ module Systemd
       #     # has priority 5
       #   end
       def add_disjunction
+        @reopen_filter_conditions << :disjunction
+
         rc = Native.sd_journal_add_disjunction(@ptr)
         raise JournalError, rc if rc < 0
       end
@@ -90,6 +92,8 @@ module Systemd
       #     # current_entry is an sshd event with priority 5
       #   end
       def add_conjunction
+        @reopen_filter_conditions << :conjunction
+
         rc = Native.sd_journal_add_conjunction(@ptr)
         raise JournalError, rc if rc < 0
       end
@@ -97,7 +101,26 @@ module Systemd
       # Remove all filters and conjunctions/disjunctions.
       # @return [nil]
       def clear_filters
+        @reopen_filter_conditions = []
+
         Native.sd_journal_flush_matches(@ptr)
+      end
+
+      private
+
+      def restore_filters(conditions = @reopen_filter_conditions)
+        clear_filters
+
+        conditions.each do |condition|
+          case condition
+          when :disjunction
+            add_disjunction
+          when :conjunction
+            add_conjunction
+          else
+            add_filters(condition)
+          end
+        end
       end
     end
   end
