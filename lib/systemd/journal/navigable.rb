@@ -137,10 +137,20 @@ module Systemd
         if auto_reopen
           @sd_call_count += 1
           if @sd_call_count >= auto_reopen
-            cursor = self.cursor
+            begin
+              cursor = self.cursor
+            rescue
+              # Cancel the reopen process if cursor method causes 'Cannot assign requested address' error
+              @sd_call_count = 0
+              return
+            end
+
+            filter_conditions = @reopen_filter_conditions.dup
 
             close
             initialize(@reopen_options)
+
+            restore_filters(filter_conditions)
 
             seek(cursor)
             # To avoid 'Cannot assign requested address' error

@@ -64,7 +64,15 @@ RSpec.describe Systemd::Journal do
       end
 
       it "should re-open internal journal pointer at specified iterations" do
-        journal = Systemd::Journal.new(auto_reopen: 2)
+        journal = Systemd::Journal.new(file: journal_file, auto_reopen: 2)
+        journal.seek(:head)
+
+        journal.add_filters({syslog_identifier: "kernel"})
+        journal.add_conjunction
+        journal.add_filters({priority: "6"})
+        journal.add_disjunction
+        journal.add_filters({_transport: "kernel"})
+
         internal_journal = journal.instance_variable_get(:@ptr)
 
         journal.move_next
@@ -72,6 +80,13 @@ RSpec.describe Systemd::Journal do
 
         journal.move_next
         expect(journal.instance_variable_get(:@ptr)).to_not be internal_journal
+        expect(journal.instance_variable_get(:@reopen_filter_conditions)).to eq [
+          {syslog_identifier: "kernel"},
+          :conjunction,
+          {priority: "6"},
+          :disjunction,
+          {_transport: "kernel"}
+        ]
       end
     end
   end

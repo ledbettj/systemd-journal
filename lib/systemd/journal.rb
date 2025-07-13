@@ -53,6 +53,7 @@ module Systemd
       open_type, flags = validate_options!(opts)
       ptr = FFI::MemoryPointer.new(:pointer, 1)
 
+      @reopen_filter_conditions = [] # retain the conditions for auto reopen
       @auto_reopen = (opts.key?(:auto_reopen) ? opts.delete(:auto_reopen) : false)
       if @auto_reopen
         @auto_reopen = @auto_reopen.is_a?(Integer) ? @auto_reopen : ITERATIONS_TO_AUTO_REOPEN
