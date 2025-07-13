@@ -108,7 +108,11 @@ module Systemd
 
       private
 
-      def restore_filters(conditions = @reopen_filter_conditions)
+      # Restore filters from a previously saved set of conditions.
+      # Note that this cannot be a reference to the existing @reopen_filter_conditions
+      # as they will be cleared when this method is called.
+      # # @param [Array] conditions an array of conditions to restore.
+      def restore_filters(conditions)
         clear_filters
 
         conditions.each do |condition|
