@@ -480,10 +480,32 @@ RSpec.describe Systemd::Journal do
   describe "message" do
     it "escapes percent signs in messages" do
       expect(Systemd::Journal::Native).to receive(:sd_journal_send)
-        .with(:string, "MESSAGE=hello %% world %%", :string, nil)
+        .with("MESSAGE=hello %% world %%", :string, "CUSTOM_FIELD=test", :pointer, nil)
         .and_return(0)
 
-      Systemd::Journal.message(message: "hello % world %")
+      Systemd::Journal.message(message: "hello % world %", custom_field: "test")
+    end
+
+    it "sends message to journal" do
+      Systemd::Journal.message(message: "test message")
+    end
+
+    it "sends message with priority and custom field to journal" do
+      Systemd::Journal.message(
+        message: "test message",
+        priority: Systemd::Journal::LOG_ERR,
+        custom_field: "hello world"
+      )
+
+      j = Systemd::Journal.new
+      j.seek(:tail)
+      j.move_previous
+
+      expect(j.current_entry).to have_attributes(
+        message: "test message",
+        custom_field: "hello world",
+        priority: Systemd::Journal::LOG_ERR.to_s
+      )
     end
   end
 
@@ -494,6 +516,19 @@ RSpec.describe Systemd::Journal do
         .and_return(0)
 
       Systemd::Journal.print(Systemd::Journal::LOG_DEBUG, "hello % world %")
+    end
+
+    it "prints to journal" do
+      Systemd::Journal.print(Systemd::Journal::LOG_DEBUG, "hello % world !")
+
+      j = Systemd::Journal.new
+      j.seek(:tail)
+      j.move_previous
+
+      expect(j.current_entry).to have_attributes(
+        message: "hello % world !",
+        priority: Systemd::Journal::LOG_DEBUG.to_s
+      )
     end
   end
 end

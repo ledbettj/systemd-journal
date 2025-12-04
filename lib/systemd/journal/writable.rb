@@ -78,8 +78,7 @@ module Systemd
             [:string, "#{k.to_s.upcase}=#{value}"]
           end
           # add a null pointer to terminate the varargs
-          items += [:string, nil]
-          rc = Native.sd_journal_send(*items)
+          rc = Native.sd_journal_send(*items[1..], :pointer, nil)
           raise JournalError, rc if rc < 0
         end
       end
