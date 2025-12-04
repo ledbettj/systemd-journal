@@ -43,6 +43,7 @@ module Systemd
     module Native
       require "ffi"
       extend FFI::Library
+
       ffi_lib %w[ libsystemd.so.0 libsystemd.so
         libsystemd-id128.so.0 libsystemd-id128.so ]
 

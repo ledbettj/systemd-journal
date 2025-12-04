@@ -8,6 +8,7 @@ module Systemd
       # rubocop:disable Layout/LineLength
       require "ffi"
       extend FFI::Library
+
       ffi_lib %w[ libsystemd.so.0 libsystemd.so
         libsystemd-journal.so.0 libsystemd-journal.so]
 

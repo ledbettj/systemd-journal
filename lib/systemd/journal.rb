@@ -263,7 +263,7 @@ module Systemd
         Native.sd_journal_open_directory(ptr, opts[:path], 0)
       when :files, :file
         files = Array(opts[type])
-        @open_target = "file#{files.one? ? "" : "s"}:#{files.join(",")}"
+        @open_target = "file#{"s" unless files.one?}:#{files.join(",")}"
         Native.sd_journal_open_files(ptr, array_to_ptrs(files), 0)
       when :container
         @open_target = "container:#{opts[:container]}"
