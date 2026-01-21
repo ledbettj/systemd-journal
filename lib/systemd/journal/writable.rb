@@ -32,23 +32,24 @@ module Systemd
       # methods in this module will be available as class methods on
       #  {Systemd::Journal}
       module ClassMethods
-        # Creates a new IO stream which writes newline-seperated messages to
-        # the journal.
-        # @param identifier [String] this value will be passed as
-        #   SYSLOG_IDENTIFIER to the journal.
-        # @param priority [Integer] the log level for events writen to this
-        #   stream.
+        # Creates a new IO stream which writes newline-seperated messages to the journal.
+        # @param identifier [String] this value will be passed as SYSLOG_IDENTIFIER to the journal.
+        # @param priority [Integer] the log level for events writen to this stream.
         # @param opts [Hash]
-        # @option opts [Boolean] :prefix true to enable kernel-style log
-        #   priority prefixes
-        # @return [IO]
+        # @option opts [Boolean] :prefix true to enable kernel-style log priority prefixes
+        # @option opts [String] :namespace the namespace to write messages into; note that it must exist prior to this call.
+        # @return [IO] an IO object.
         def log_stream(identifier, priority, opts = {})
-          fd = Native.sd_journal_stream_fd(
-            identifier,
-            priority,
-            !opts[:prefix].nil?
-          )
-          raise JournalError, fd if fd < 0
+          is_namespaced = !opts[:namespace].nil?
+
+          raise UnsupportedFeatureError, :stream_fd_with_namespace if is_namespaced && !Native.feature?(:stream_fd_with_namespace)
+
+          params = is_namespaced ? [opts[:namespace]] : []
+          params += [identifier, priority, !opts[:prefix].nil?]
+          fn = is_namespaced ? :sd_journal_stream_fd_with_namespace : :sd_journal_stream_fd
+
+          fd = Native.send(fn, *params)
+          raise JournalError, fd if fd.negative?
 
           IO.new(fd, File::WRONLY, encoding: Encoding::UTF_8)
         end
